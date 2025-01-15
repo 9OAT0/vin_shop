@@ -18,7 +18,7 @@ model Users {
 model Products {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   name        String
-  pictures    String   @map("Picture") // ชื่อฟิลด์ใน MongoDB คือ "Picture"
+  pictures    String[] // เปลี่ยนเป็น Array ของ String
   price       Float?   @map("Price")
   size        String   @map("Size")
   description String   @map("description")
