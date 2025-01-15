@@ -11,7 +11,7 @@
   "dependencies": {
     "@prisma/client": "^6.0.1",
     "bcrypt": "^5.1.1",
-    "cloudinary": "^2.5.1",
+    "cloudinary": "^1.41.3",
     "dotenv": "^16.4.7",
     "firebase": "^11.1.0",
     "jsonwebtoken": "^9.0.2",
@@ -19,14 +19,17 @@
     "mongoose": "^8.8.4",
     "mongosh": "^2.3.4",
     "multer": "^1.4.5-lts.1",
+    "multer-storage-cloudinary": "^4.0.0",
     "next": "15.0.3",
     "next-cloudinary": "^6.16.0",
     "next-connect": "^1.0.0",
     "prisma": "^6.0.1",
     "react": "19.0.0-rc-66855b96-20241106",
-    "react-dom": "19.0.0-rc-66855b96-20241106"
+    "react-dom": "19.0.0-rc-66855b96-20241106",
+    "sharp": "^0.33.5"
   },
   "devDependencies": {
+    "@types/multer": "^1.4.12",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
