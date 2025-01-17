@@ -8,17 +8,17 @@ datasource db {
 }
 
 model Users {
-  id       String @id @default(auto()) @map("_id") @db.ObjectId
-  email    String
-  location String
-  name     String
-  password String
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  email     String
+  location  String
+  name      String
+  password  String
 }
 
-model Products {
+model Product {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   name        String
-  pictures    String[] // เปลี่ยนเป็น Array ของ String
+  pictures    String[] // Array ของ URL รูปภาพ
   price       Float?   @map("Price")
   size        String   @map("Size")
   description String   @map("description")
