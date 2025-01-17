@@ -1,0 +1,25 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model Users {
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  email    String
+  location String
+  name     String
+  password String
+}
+
+model Products {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  pictures    String[] // เปลี่ยนเป็น Array ของ String
+  price       Float?   @map("Price")
+  size        String   @map("Size")
+  description String   @map("description")
+}
