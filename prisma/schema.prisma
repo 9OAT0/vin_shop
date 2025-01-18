@@ -13,13 +13,22 @@ model Users {
   location  String
   name      String
   password  String
+  cart      Cart?   @relation("UserCart")
+  cartId    String?  // Foreign key for Cart
 }
 
-model Product {
+model Cart {
+  id        String     @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String     @unique // ID ของผู้ใช้
+  user      Users      @relation("UserCart", fields: [userId], references: [id])
+  products  String[]   // Array of associated products
+}
+
+model Products {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   name        String
-  pictures    String[] // Array ของ URL รูปภาพ
-  price       Float?   @map("Price")
-  size        String   @map("Size")
-  description String   @map("description")
+  pictures    String[] // Array of URL images
+  price       Float?
+  size        String?
+  description String
 }
