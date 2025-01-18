@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 export default async function handler(req, res) {
   if (req.method === 'GET') {
     try {
-      const products = await prisma.products.findMany(); // ดึงข้อมูลผลิตภัณฑ์ทั้งหมดจาก MongoDB
+      const products = await prisma.products.findMany(); // ใช้ products ตามที่ได้ตั้งค่าใน schema
       res.status(200).json(products); // ส่งผลลัพธ์กลับ
     } catch (error) {
       console.error('Error fetching products:', error.message);
