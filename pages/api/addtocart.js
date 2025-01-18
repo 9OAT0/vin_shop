@@ -30,24 +30,40 @@ async function addToCart(userId, productId) {
     }
 
     if (!user.cart) {
+      // สร้าง Cart ใหม่และเพิ่มผลิตภัณฑ์แรก
       const newCart = await prisma.cart.create({
         data: {
           userId: userId,
-          products: [productId],
+          products: {
+            create: {
+              productId: productId,
+            },
+          },
         },
       });
       return newCart;
     }
 
-    if (user.cart.products.includes(productId)) {
-      throw new Error('Product already in cart');
+    // ตรวจสอบว่าผลิตภัณฑ์อยู่ใน cart แล้วหรือไม่
+    const productExists = await prisma.cartProduct.findFirst({
+      where: {
+        cartId: user.cart.id,
+        productId: productId,
+      },
+    });
+
+    if (productExists) {
+      throw new Error('สินค้านี้มีอยู่ในตะกร้าแล้ว');
     }
 
+    // อัปเดต cart โดยการเพิ่ม CartProduct ใหม่
     const updatedCart = await prisma.cart.update({
       where: { id: user.cart.id },
       data: {
         products: {
-          push: productId,
+          create: {
+            productId: productId,
+          },
         },
       },
     });
