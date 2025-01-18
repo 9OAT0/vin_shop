@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 
 export default async function handler(req, res) {
   const {
-    query: { id }, // ดึง userId จาก query
+    query: { id }, // userId ที่มาจาก query params
   } = req;
 
   if (req.method === 'GET') {
@@ -19,7 +19,11 @@ export default async function handler(req, res) {
           userId: id,
         },
         include: {
-          products: true, // ใช้ include สำหรับ Product ที่ถูกเชื่อมโยง
+          products: { // ค้นหา CartProduct ที่เชื่อมโยง
+            include: {
+              product: true, // ดึงข้อมูลผลิตภัณฑ์ที่เชื่อมโยง
+            },
+          },
         },
       });
 
@@ -27,8 +31,9 @@ export default async function handler(req, res) {
         return res.status(404).json({ error: 'Cart not found for this user.' });
       }
 
-      // ส่งข้อมูลสินค้าที่อยู่ในตระกร้า
-      res.status(200).json(cart.products);
+      const productDetails = cart.products.map(cp => cp.product);
+
+      res.status(200).json(productDetails);
     } catch (error) {
       console.error('Error fetching cart:', error.message);
       res.status(500).json({ error: 'Error fetching cart', details: error.message });

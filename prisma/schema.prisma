@@ -21,14 +21,24 @@ model Cart {
   id        String     @id @default(auto()) @map("_id") @db.ObjectId
   userId    String     @unique // ID ของผู้ใช้
   user      Users      @relation("UserCart", fields: [userId], references: [id])
-  products  String[]   // Array of associated products
+  products  CartProduct[] // เวลาที่สินค้าถูกจัดการใน Cart
 }
 
 model Products {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   name        String
-  pictures    String[] // Array of URL images
+  pictures    String[] // Array ของ URL images
   price       Float?
-  size        String?
+  size        String?  // สามารถเป็น null
   description String
+  cartProducts CartProduct[] // เชื่อมโยงกลับไปที่ CartProduct
+}
+
+// โมเดลสำหรับการเชื่อมโยงระหว่าง Cart และ Products
+model CartProduct {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  cartId    String
+  productId String
+  cart      Cart     @relation(fields: [cartId], references: [id])
+  product   Products @relation(fields: [productId], references: [id])
 }
