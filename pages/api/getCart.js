@@ -1,28 +1,45 @@
-// pages/api/getCart.js
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
 export default async function handler(req, res) {
   if (req.method === 'GET') {
-    const { userId } = req.query;
-    
+    const { userId } = req.query; // ใช้ query string
+
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required.' });
+    }
+
     try {
-      const cartItems = await prisma.cartProduct.findMany({
+      // ค้นหา cart โดยใช้ userId
+      const cart = await prisma.cart.findUnique({
         where: {
-          cart: {
-            userId: userId,
+          userId: userId,
+        },
+        include: {
+          products: { 
+            include: {
+              product: true,
+            },
           },
         },
       });
 
-      res.status(200).json(cartItems);
+      if (!cart) {
+        return res.status(404).json({ error: 'Cart not found for this user.' });
+      }
+
+      // ดึงข้อมูลผลิตภัณฑ์ใน cart
+      const productDetails = cart.products.map(cp => cp.product);
+
+      res.status(200).json(productDetails);
     } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: 'Error fetching cart items' });
+      console.error('Error fetching cart:', error.message);
+      res.status(500).json({ error: 'Error fetching cart', details: error.message });
+    } finally {
+      await prisma.$disconnect();
     }
   } else {
-    res.setHeader('Allow', ['GET']);
-    res.status(405).end(`Method ${req.method} Not Allowed`);
+    res.status(405).json({ error: 'Method Not Allowed' });
   }
 }

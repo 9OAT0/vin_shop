@@ -7,7 +7,7 @@ export default async function handler(req, res) {
     const { userId } = req.body;
 
     try {
-      // ดึง Cart ของผู้ใช้
+      // ดึงข้อมูล Cart ของผู้ใช้
       const cart = await prisma.cart.findUnique({
         where: {
           userId: userId,
@@ -17,12 +17,12 @@ export default async function handler(req, res) {
         },
       });
 
-      // เช็คว่าตะกร้ามีผลิตภัณฑ์อยู่ไหม
+      // ตรวจสอบว่าตะกร้ามีสินค้า
       if (!cart || cart.products.length === 0) {
         return res.status(400).json({ error: 'Cart is empty' });
       }
 
-      // สร้างคำสั่งซื้อ
+      // สร้างคำสั่งซื้อสำหรับแต่ละสินค้า
       const orders = await Promise.all(
         cart.products.map(({ productId }) => 
           prisma.order.create({
@@ -36,7 +36,7 @@ export default async function handler(req, res) {
         )
       );
 
-      // ลบผลิตภัณฑ์จากตะกร้า
+      // ลบสินค้าจากตะกร้า
       await prisma.cartProduct.deleteMany({
         where: {
           cartId: cart.id,
@@ -45,7 +45,7 @@ export default async function handler(req, res) {
 
       res.status(201).json({ orders });
     } catch (error) {
-      console.error(error);
+      console.error('Error creating order:', error);
       res.status(500).json({ error: 'Error creating order' });
     }
   } else {
