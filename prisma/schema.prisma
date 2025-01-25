@@ -39,6 +39,7 @@ model CartProduct {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   cartId    String
   productId String
+  firstPicture String
   cart      Cart     @relation(fields: [cartId], references: [id])
   product   Products @relation(fields: [productId], references: [id])
 }
@@ -47,6 +48,7 @@ model Order {
   id          String  @id @default(auto()) @map("_id") @db.ObjectId
   productId   String
   userId      String
+  picture    String? 
   status      String  // สถานะการสั่งซื้อ เช่น 'Pending', 'Shipped', 'Delivered'
   trackingId  String? // ID สำหรับติดตามการจัดส่ง
   createdAt   DateTime @default(now())
