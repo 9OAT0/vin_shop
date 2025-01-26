@@ -44,12 +44,19 @@ model CartProduct {
   product   Products @relation(fields: [productId], references: [id])
 }
 
+enum OrderStatus {
+  Pending
+  Shipped
+  Delivered
+  Canceled
+}
+
 model Order {
   id          String  @id @default(auto()) @map("_id") @db.ObjectId
   productId   String
   userId      String
   picture    String? 
-  status      String  // สถานะการสั่งซื้อ เช่น 'Pending', 'Shipped', 'Delivered'
+  status      OrderStatus  // สถานะการสั่งซื้อ เช่น 'Pending', 'Shipped', 'Delivered'
   trackingId  String? // ID สำหรับติดตามการจัดส่ง
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
