@@ -9,7 +9,7 @@ export default async function handler(req, res) {
       const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
       const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
 
-      // ดึงข้อมูลคำสั่งซื้อในเดือนนี้
+      // Fetch orders for the current month
       const orders = await prisma.order.findMany({
         where: {
           createdAt: {
@@ -22,18 +22,16 @@ export default async function handler(req, res) {
         },
       });
 
-      // ตรวจสอบว่า `orders` ไม่ใช่ `null` หรือ `undefined`
       if (!orders || orders.length === 0) {
         return res.status(200).json({ message: 'No orders found for this month.' });
       }
 
-      // สรุปข้อมูลคำสั่งซื้อตามวันที่
       const summary = {};
+      const statusSummary = {}; // เก็บข้อมูลแยกตามสถานะออเดอร์
 
       orders.forEach((order) => {
-        // ตรวจสอบว่า `order.createdAt` และ `order.product` มีค่าหรือไม่
-        if (!order.createdAt) {
-          console.warn('Order is missing createdAt field:', order);
+        if (!order || !order.createdAt) {
+          console.warn('Order is missing required fields:', order);
           return;
         }
 
@@ -62,16 +60,51 @@ export default async function handler(req, res) {
 
           summary[orderDate].products[productId].quantity += 1;
         }
+
+        // นับจำนวนคำสั่งซื้อแยกตามสถานะ และรวมข้อมูลสินค้าที่เกี่ยวข้อง
+        if (order.status) {
+          if (!statusSummary[order.status]) {
+            statusSummary[order.status] = {
+              count: 0,
+              products: {},
+            };
+          }
+
+          statusSummary[order.status].count += 1;
+
+          if (order.productId && order.product) {
+            const productId = order.productId;
+
+            if (!statusSummary[order.status].products[productId]) {
+              statusSummary[order.status].products[productId] = {
+                productId: productId,
+                name: order.product.name || 'Unknown Product',
+                quantity: 0,
+              };
+            }
+
+            statusSummary[order.status].products[productId].quantity += 1;
+          }
+        }
       });
 
-      const result = Object.values(summary);
+      // เตรียมข้อมูลสำหรับแสดงผล
+      const graphData = Object.entries(statusSummary).map(([status, data]) => ({
+        status,
+        count: data.count,
+        products: Object.values(data.products),
+      }));
 
-      return res.status(200).json(result.length > 0 ? result : { message: 'No orders found for this month.' });
+      const result = {
+        dailySummary: Object.values(summary),
+        statusSummary: graphData,
+      };
+
+      return res.status(200).json(result);
     } catch (error) {
       console.error('Error fetching orders summary:', error);
 
-      // ตรวจสอบว่า `error` เป็นวัตถุหรือไม่
-      const errorMessage = error?.message || 'An unknown error occurred.';
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
 
       return res.status(500).json({
         error: 'Error fetching orders summary',
