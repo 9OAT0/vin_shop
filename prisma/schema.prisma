@@ -15,6 +15,8 @@ model Users {
   password  String
   cart      Cart?   @relation("UserCart")
   cartId    String?  // Foreign key for Cart
+
+  Order Order[]
 }
 
 model Cart {
@@ -57,10 +59,12 @@ model Order {
   id          String  @id @default(auto()) @map("_id") @db.ObjectId
   productId   String
   userId      String
-  picture    String? 
+  picture     String? 
+  address     String
   status      OrderStatus  // สถานะการสั่งซื้อ เช่น 'Pending', 'Shipped', 'Delivered'
   trackingId  String? // ID สำหรับติดตามการจัดส่ง
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  user        Users    @relation(fields: [userId], references: [id])
   product     Products @relation(fields: [productId], references: [id])
 }   

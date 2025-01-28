@@ -13,10 +13,10 @@ export default async function handler(req, res) {
         return res.status(405).json({ message: 'Method Not Allowed' });
     }
 
-    const { name, email, password, location } = req.body;
+    const { name, email, password } = req.body;
 
     // ตรวจสอบข้อมูลที่จำเป็น
-    if (!name || !email || !password || !location) {
+    if (!name || !email || !password ) {
         return res.status(400).json({ message: 'Name, email, password, and location are required' });
     }
 
@@ -44,18 +44,19 @@ export default async function handler(req, res) {
                 name,
                 email,
                 password: hashedPassword, // เก็บรหัสผ่านแบบ hash
-                location,
+                location: " ",
             },
         });
 
         // สร้าง JWT token
         const tokenPayload = { id: user.id, email: user.email };
+        const user_id = user.id;
 
         const token = jwt.sign(tokenPayload, SECRET_KEY, {
-            expiresIn: '1h',
+            expiresIn: '12h',
         });
 
-        res.status(201).json({ message: 'User created successfully', token });
+        res.status(201).json({ message: 'User created successfully', token, user_id });
 
     } catch (error) {
         console.error('Error:', error.message || error);
