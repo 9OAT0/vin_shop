@@ -8,18 +8,49 @@ datasource db {
 }
 
 model Users {
-  id       String @id @default(auto()) @map("_id") @db.ObjectId
-  email    String
-  location String
-  name     String
-  password String
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  email     String
+  location  String
+  name      String
+  password  String
+  cart      Cart?   @relation("UserCart")
+  cartId    String?  // Foreign key for Cart
+}
+
+model Cart {
+  id        String     @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String     @unique // ID ของผู้ใช้
+  user      Users      @relation("UserCart", fields: [userId], references: [id])
+  products  CartProduct[] // เวลาที่สินค้าถูกจัดการใน Cart
 }
 
 model Products {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   name        String
-  pictures    String[] // เปลี่ยนเป็น Array ของ String
-  price       Float?   @map("Price")
-  size        String   @map("Size")
-  description String   @map("description")
+  pictures    String[] // Array ของ URL images
+  price       Float?
+  size        String?  // สามารถเป็น null
+  description String
+  cartProducts CartProduct[] // เชื่อมโยงกลับไปที่ CartProduct
 }
+
+// โมเดลสำหรับการเชื่อมโยงระหว่าง Cart และ Products
+model CartProduct {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  cartId    String
+  productId String
+  firstPicture String
+  cart      Cart     @relation(fields: [cartId], references: [id])
+  product   Products @relation(fields: [productId], references: [id])
+}
+
+model Order {
+  id          String  @id @default(auto()) @map("_id") @db.ObjectId
+  productId   String
+  userId      String
+  picture    String? 
+  status      String  // สถานะการสั่งซื้อ เช่น 'Pending', 'Shipped', 'Delivered'
+  trackingId  String? // ID สำหรับติดตามการจัดส่ง
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}   

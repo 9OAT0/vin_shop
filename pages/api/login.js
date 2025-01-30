@@ -47,6 +47,7 @@ export default async function handler(req, res) {
         }
 
         const tokenPayload = { id: user.id, email: user.email };
+        const user_id = user.id
 
         if (!tokenPayload.id || !tokenPayload.email) {
             console.error('Invalid payload:', tokenPayload);
@@ -57,7 +58,7 @@ export default async function handler(req, res) {
             expiresIn: '1h',
         });
 
-        res.status(200).json({ message: 'Login successful', token });
+        res.status(200).json({ message: 'Login successful', token, user_id });
     } catch (error) {
         console.error('Error:', error.message || error);
         res.status(500).json({ error: 'Login failed', details: error.message || error });
