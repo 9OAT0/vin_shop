@@ -9,7 +9,7 @@ datasource db {
 
 model Users {
   id        String  @id @default(auto()) @map("_id") @db.ObjectId
-  email     String
+  email     String  @unique
   location  String
   name      String
   password  String
