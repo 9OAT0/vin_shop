@@ -1,18 +1,26 @@
-'use client'; // เพิ่ม directive นี้เพื่อให้ใช้ useEffect ได้
+'use client'; // เพื่อให้ใช้ useEffect ได้
 
 import { useEffect, useState } from 'react';
 import ProductCardd from '../components/ProductCardd';
-import Footer from "../components/Footer";
-import Navbar from "../components/Navbar";
+import Footer from '../components/Footer';
+import Navbar from '../components/Navbar';
+
+interface Product { // กำหนดประเภทของผลิตภัณฑ์
+  id: number; 
+  pictures: string[];
+  name: string;
+  price: string | number; // ยอมรับเป็น string หรือ number
+  size: string;
+}
 
 export default function ShopallPage() {
-  const [products, setProducts] = useState([]); // State สำหรับเก็บข้อมูลผลิตภัณฑ์
+  const [products, setProducts] = useState<Product[]>([]); // State สำหรับเก็บข้อมูลผลิตภัณฑ์
   const [loading, setLoading] = useState(true); // State สำหรับสถานะการโหลด
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await fetch('/api/AllProduct'); // URL ของ API
+        const response = await fetch('/api/ProductGet'); // URL ของ API
         if (!response.ok) {
           const errorText = await response.text();
           throw new Error(`Network response was not ok: ${errorText}`);
@@ -27,7 +35,7 @@ export default function ShopallPage() {
     };
 
     fetchProducts(); // เรียกฟังก์ชันดึงข้อมูล
-  }, []); // Dependencies เป็น array ว่าง เพื่อจะทำงานเฉพาะเมื่อ Component ถูก mount
+  }, []); // Dependencies เป็น array ว่างเพื่อทำงานเฉพาะเมื่อ Component ถูก mount
 
   if (loading) {
     return <div>Loading...</div>; // แสดงข้อความ Loading ขณะรอข้อมูล
@@ -36,7 +44,7 @@ export default function ShopallPage() {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen">
+      <div className='min-h-screen'>
         <div className="w-full h-[40px] bg-white flex justify-between items-center px-5 border-black border-[1px]">
           <a href=""><div className="text-black"><h1>FILTER</h1></div></a>
           <a href=""><div className="text-black"><h1>SORT</h1></div></a>
@@ -45,10 +53,10 @@ export default function ShopallPage() {
           {products.map((product) => (
             <ProductCardd
               key={product.id} // ใช้ id ของผลิตภัณฑ์แทน index
-              imageSrc={product.pictures[0]} // สมมุติว่ามีรูปภาพใน array
+              imageSrc={product.pictures[0] || '/default.jpg'} // ใช้รูปภาพแรกจาก array หรือ default
               name={product.name}
-              price={product.price}
-              size={product.size}
+              price={typeof product.price === 'number' ? product.price.toString() : product.price} // แปลงเป็น string ถ้าจำเป็น
+              size={product.size || 'N/A'}
             />
           ))}
         </div>
