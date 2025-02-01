@@ -34,7 +34,7 @@ const SlidingTextBanner: React.FC<SlidingTextBannerProps> = ({
           </span>
         ))}
       </div>
-      <style jsx>{`
+      <style>{`
         @keyframes slide {
           0% {
             transform: translateX(-100%);
