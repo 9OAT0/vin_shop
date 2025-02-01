@@ -20,7 +20,7 @@ export default function ShopallPage() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await fetch('/api/ProductGet'); // URL ของ API
+        const response = await fetch('/api/productGet'); // URL ของ API
         if (!response.ok) {
           const errorText = await response.text();
           throw new Error(`Network response was not ok: ${errorText}`);
