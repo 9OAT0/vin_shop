@@ -1,9 +1,12 @@
 import { PrismaClient } from '@prisma/client';
+import { authenticateToken } from '../auth';
+
 
 const prisma = new PrismaClient();
 
 // API Handler สำหรับดึงและแก้ไขข้อมูลผลิตภัณฑ์
 export default async function handler(req, res) {
+  await authenticateToken(req, res, async() => {
   const { method } = req;
   const { id } = req.query; // รับ ID จาก URL
 
@@ -49,4 +52,5 @@ export default async function handler(req, res) {
   } else {
     res.status(405).json({ error: 'Method Not Allowed' });
   }
+  });
 }
