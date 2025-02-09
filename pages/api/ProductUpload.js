@@ -2,6 +2,8 @@ import multer from 'multer';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import cloudinary from './CouldinaryConfig'; 
 import { PrismaClient } from '@prisma/client';
+import { authenticateToken } from './auth';
+
 
 const prisma = new PrismaClient();
 
@@ -31,6 +33,7 @@ export const config = {
 
 // API Handler
 export default async function handler(req, res) {
+  await authenticateToken(req, res, async() => {
   if (req.method === 'POST') {
     upload.array('pictures', 5)(req, res, async (err) => {
       if (err) {
@@ -65,4 +68,5 @@ export default async function handler(req, res) {
   } else {
     res.status(405).json({ error: 'Method Not Allowed' });
   }
+});
 }
