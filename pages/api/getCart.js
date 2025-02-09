@@ -1,8 +1,11 @@
 import { PrismaClient } from '@prisma/client';
+import { authenticateToken } from './auth';
+
 
 const prisma = new PrismaClient();
 
 export default async function handler(req, res) {
+  await authenticateToken(req, res, async () => {
   if (req.method === 'GET') {
     const { userId } = req.query; // ใช้ query string
 
@@ -42,4 +45,5 @@ export default async function handler(req, res) {
   } else {
     res.status(405).json({ error: 'Method Not Allowed' });
   }
+});
 }

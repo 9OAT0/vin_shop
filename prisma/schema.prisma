@@ -61,6 +61,7 @@ model Order {
   userId      String
   picture     String? 
   address     String
+  paymentSlip String?
   status      OrderStatus  // สถานะการสั่งซื้อ เช่น 'Pending', 'Shipped', 'Delivered'
   trackingId  String? // ID สำหรับติดตามการจัดส่ง
   createdAt   DateTime @default(now())

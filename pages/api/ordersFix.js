@@ -1,8 +1,10 @@
 import { PrismaClient } from '@prisma/client';
+import { authenticateToken } from './auth';
 
 const prisma = new PrismaClient();
 
 export default async function handler(req, res) {
+  await authenticateToken(req, res, async() => {
   const { method } = req;
   const { orderId } = req.query; // ดึง orderId จากพารามิเตอร์ใน URL
 
@@ -59,4 +61,5 @@ export default async function handler(req, res) {
     res.setHeader('Allow', ['GET', 'PUT']);
     res.status(405).end(`Method ${method} Not Allowed`);
   }
+});
 }
