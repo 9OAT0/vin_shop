@@ -123,8 +123,8 @@ export default function SignUpPage() {
                     >
                         {loading ? 'Creating...' : 'CREATE'}
                     </button>
-                    <div>
-                        <a href="/login" className="text-blue-500">SIGN IN</a>
+                    <div className='border-black border-b'>
+                        <a href="/login" className="text-black">SIGN IN</a>
                     </div>
                 </form>
             </div>
