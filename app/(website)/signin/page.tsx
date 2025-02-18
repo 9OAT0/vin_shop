@@ -19,6 +19,8 @@ export default function SignUpPage() {
         setLoading(true);
         setError('');
 
+        const name = `${firstName} ${lastName}`.trim();
+
         try {
             const response = await fetch('/api/singup', {
                 method: 'POST',
@@ -27,8 +29,7 @@ export default function SignUpPage() {
                     Accept: 'application/json',
                 },
                 body: JSON.stringify({
-                    firstName,  // ส่ง firstName
-                    lastName,   // ส่ง lastName
+                    name,   // ส่ง lastName
                     email,
                     password,
                 }),
@@ -68,27 +69,17 @@ export default function SignUpPage() {
                 <form onSubmit={handleSubmit} className="flex flex-col justify-center items-center gap-28">
                     <div className="flex flex-col justify-center items-center gap-8">
                         <div className="flex flex-col">
-                            <label htmlFor="first-name">FIRST NAME</label>
+                            <label htmlFor="first-name">NAME</label>
                             <input 
                                 type="text" 
                                 id="first-name" 
                                 value={firstName} 
                                 onChange={(e) => setFirstName(e.target.value)} 
-                                className="w-[400px] h-[40px] border-[1px] border-b border-black" 
+                                className="w-[400px] h-[40px] border-b border-black" 
                                 required 
                             />
                         </div>
-                        <div className="flex flex-col">
-                            <label htmlFor="last-name">LAST NAME</label>
-                            <input 
-                                type="text" 
-                                id="last-name" 
-                                value={lastName} 
-                                onChange={(e) => setLastName(e.target.value)} 
-                                className="w-[400px] h-[40px] border-[1px] border-b border-black" 
-                                required 
-                            />
-                        </div>
+                        
                         <div className="flex flex-col">
                             <label htmlFor="email">EMAIL</label>
                             <input 
@@ -96,7 +87,7 @@ export default function SignUpPage() {
                                 id="email" 
                                 value={email} 
                                 onChange={(e) => setEmail(e.target.value)} 
-                                className={`w-[400px] h-[40px] border-[1px] border-b border-black ${!isEmailValid() && email ? 'border-red-600' : ''}`} 
+                                className={`w-[400px] h-[40px] border-b border-black ${!isEmailValid() && email ? 'border-red-600' : ''}`} 
                                 required 
                             />
                             {!isEmailValid() && email && (
@@ -110,7 +101,7 @@ export default function SignUpPage() {
                                 id="password" 
                                 value={password} 
                                 onChange={(e) => setPassword(e.target.value)} 
-                                className="w-[400px] h-[40px] border-[1px] border-b border-black" 
+                                className="w-[400px] h-[40px] border-b border-black" 
                                 required 
                             />
                         </div>

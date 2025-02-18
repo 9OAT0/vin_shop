@@ -31,19 +31,20 @@ export default function LoginPage() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
-        const errorMessage = errorData?.error || 'Login failed';
+        const errorMessage = errorData?.error || 'การเข้าสู่ระบบล้มเหลว';
         throw new Error(errorMessage);
       }
 
       const data = await response.json();
-      console.log('Login successful, token:', data.token);
-      localStorage.setItem('token', data.token);
-      router.push('/');
+        console.log('เข้าสู่ระบบสำเร็จ, token:', data.token);
+        localStorage.setItem('token', data.token); // เก็บ token ใน localStorage
+        localStorage.setItem('userId', data.userId); // เก็บ userId ถ้าต้องการ
+        router.push('/');
     } catch (err: any) {
       console.error(err.message);
       setError(
         err.message.includes('NetworkError')
-          ? 'Network error, please try again later.'
+          ? 'เกิดข้อผิดพลาดในการเชื่อมต่อ โปรดลองอีกครั้งภายหลัง'
           : err.message
       );
     } finally {
@@ -51,38 +52,39 @@ export default function LoginPage() {
     }
   };
 
-  const isEmailValid = () => /\S+@\S+\.\S+/.test(email);
+  const isEmailValid = () => email.match(/\S+@\S+\.\S+/) !== null;
 
   return (
     <>
+      
+      <div className="bg-white text-black min-h-screen">
       <Navbar />
-      <div className="bg-white text-black flex flex-col justify-center items-center gap-32 min-h-screen">
-        <div>
-          <h1 className="text-3xl font-bold text-center">Login</h1>
+        <div className='flex flex-col justify-center items-center gap-16 py-10'>
+          <h1 className="text-3xl font-bold text-center">LOGIN</h1>
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div className="flex flex-col">
-              <label>Email:</label>
+              <label>อีเมล:</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className={`border-[1px] border-b border-black p-2 ${
+                className={` border-b border-black p-2 ${
                   !isEmailValid() && email ? 'border-red-600' : ''
                 }`}
                 required
               />
               {!isEmailValid() && email && (
-                <p className="text-red-600">Please enter a valid email address.</p>
+                <p className="text-red-600">กรุณาใส่อีเมลที่ถูกต้อง</p>
               )}
             </div>
             <div className="flex flex-col">
-              <label>Password:</label>
+              <label>รหัสผ่าน:</label>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="border-[1px] border-b border-black p-2 w-full"
+                  className=" border-b border-black p-2 w-full"
                   required
                 />
                 <button
@@ -98,18 +100,21 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="bg-blue-500 text-white p-2 rounded"
+              className="bg-black text-white p-2 rounded"
             >
-              {loading ? 'Logging in...' : 'Login'}
+              {loading ? 'กำลังเข้าสู่ระบบ...' : 'SIGN IN'}
             </button>
           </form>
         </div>
-        <div className="flex justify-between items-center gap-[600px]">
-          <a href="/signin">CREATE ACCOUNT</a>
-          <a href="/forgotpassword">FORGOT YOUR PASSWORD</a>
+        <div className="flex justify-between items-center px-[300px] py-10">
+          <a href="/signin">สร้างบัญชีใหม่</a>
+          <a href="/forgotpassword">ลืมรหัสผ่าน?</a>
+        </div>
+        <div>
+          <Footer />
+          <img src="/Rectangle 276.png" alt="" className="w-full h-[40px]"/>
         </div>
       </div>
-      <Footer />
     </>
   );
 }
