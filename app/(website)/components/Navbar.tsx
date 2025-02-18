@@ -35,7 +35,6 @@ export default function ComponentsNavbar() {
                 <a href="/"><div className="text-black"><h1>VIN_SHOP</h1></div></a>
                 <div className="text-black flex justify-center items-center gap-20 pl-32"> 
                     <a href="/shopall"><h1>SHOP ALL</h1></a>
-                    <h1>INFO</h1>
                 </div>
                 <div className="flex items-center gap-4 text-black"> 
                 <a href="/login"><h1>LOGIN</h1></a>

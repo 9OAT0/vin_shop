@@ -6,6 +6,7 @@ import AnotherProductCard from './components/AnotherProductCard';
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import SlidingTextBanner from './components/SlidingTextBanner';
+import Link from 'next/link';
 
 interface Product { // กำหนดประเภทของผลิตภัณฑ์
   id: number; 
@@ -62,16 +63,17 @@ export default function Home() {
           <h1 className="text-black text-[20px] font-bold">OUR RECOMMEND PRODUCT</h1>
         </div>
         <div className="flex flex-wrap">
-          {products.map((product) => (
-            <ProductCard
-              key={product.id} // ใช้ id ของผลิตภัณฑ์แทน index
-              imageSrc={product.pictures[0] || '/default.jpg'} // ใช้รูปภาพแรกจาก array หรือ default
-              name={product.name}
-              price={typeof product.price === 'number' ? product.price.toString() : product.price} // แปลงเป็น string ถ้าจำเป็น
-              size={product.size || 'N/A'}
-            />
-          ))}
-        </div>
+                    {products.map((product) => (
+                        <Link key={product.id} href={`/buy?id=${product.id}`}>
+                        <ProductCard
+                            imageSrc={product.pictures[0] || '/default.jpg'} 
+                            name={product.name}
+                            price={typeof product.price === 'number' ? product.price.toString() : product.price} 
+                            size={product.size || 'N/A'} 
+                        />
+                        </Link>
+                    ))}
+                </div>
         <div className="bg-white w-full h-[100px] flex justify-start items-center pl-[20px] py-6">
           <a href="/shopall"><h1 className="text-black text-[20px] font-bold border-b border-black">SHOP ALL</h1></a>
         </div>

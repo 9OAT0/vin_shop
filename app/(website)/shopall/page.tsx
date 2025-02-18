@@ -1,67 +1,64 @@
-'use client'; // เพื่อให้ใช้ useEffect ได้
+'use client';
 
+import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
 import { useEffect, useState } from 'react';
 import ProductCardd from '../components/ProductCardd';
-import Footer from '../components/Footer';
-import Navbar from '../components/Navbar';
+import Link from 'next/link';
 
-interface Product { // กำหนดประเภทของผลิตภัณฑ์
-  id: number; 
-  pictures: string[];
-  name: string;
-  price: string | number; // ยอมรับเป็น string หรือ number
-  size: string;
+interface Product {
+    id: number;
+    pictures: string[];
+    name: string;
+    price: string | number;
+    size: string;
 }
 
 export default function ShopallPage() {
-  const [products, setProducts] = useState<Product[]>([]); // State สำหรับเก็บข้อมูลผลิตภัณฑ์
-  const [loading, setLoading] = useState(true); // State สำหรับสถานะการโหลด
+    const [products, setProducts] = useState<Product[]>([]);
+    const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await fetch('/api/productGet'); // URL ของ API
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`Network response was not ok: ${errorText}`);
-        }
-        const data = await response.json();
-        setProducts(data); // เก็บข้อมูลใน state
-      } catch (error) {
-        console.error('Error fetching products:', error);
-      } finally {
-        setLoading(false); // เปลี่ยนสถานะการโหลดเป็น false
-      }
-    };
+    useEffect(() => {
+        const fetchProducts = async () => {
+            try {
+                const response = await fetch('/api/productGet');
+                if (!response.ok) throw new Error('Failed to fetch products');
+                const data = await response.json();
+                setProducts(data);
+            } catch (error) {
+                console.error(error);
+            } finally {
+                setLoading(false);
+            }
+        };
 
-    fetchProducts(); // เรียกฟังก์ชันดึงข้อมูล
-  }, []); // Dependencies เป็น array ว่างเพื่อทำงานเฉพาะเมื่อ Component ถูก mount
+        fetchProducts();
+    }, []);
 
-  if (loading) {
-    return <div>Loading...</div>; // แสดงข้อความ Loading ขณะรอข้อมูล
-  }
+    if (loading) return <div>Loading...</div>;
 
-  return (
-    <>
-      <Navbar />
-      <div className='min-h-screen'>
-        <div className="w-full h-[40px] bg-white flex justify-between items-center px-5 border-black border-[1px]">
-          <a href=""><div className="text-black"><h1>FILTER</h1></div></a>
-          <a href=""><div className="text-black"><h1>SORT</h1></div></a>
-        </div>
-        <div className="flex flex-wrap">
-          {products.map((product) => (
-            <ProductCardd
-              key={product.id} // ใช้ id ของผลิตภัณฑ์แทน index
-              imageSrc={product.pictures[0] || '/default.jpg'} // ใช้รูปภาพแรกจาก array หรือ default
-              name={product.name}
-              price={typeof product.price === 'number' ? product.price.toString() : product.price} // แปลงเป็น string ถ้าจำเป็น
-              size={product.size || 'N/A'}
-            />
-          ))}
-        </div>
-      </div>
-      <Footer />
-    </>
-  );
+    return (
+        <>
+            <Navbar />
+            <div className='min-h-screen'>
+                <div className="w-full h-[40px] flex justify-between items-center px-5 border-black border-[1px]">
+                    <button className="text-black">FILTER</button>
+                    <button className="text-black">SORT</button>
+                </div>
+                <div className="flex flex-wrap">
+                    {products.map((product) => (
+                        <Link key={product.id} href={`/buy?id=${product.id}`}>
+                        <ProductCardd
+                            imageSrc={product.pictures[0] || '/default.jpg'} 
+                            name={product.name}
+                            price={typeof product.price === 'number' ? product.price.toString() : product.price} 
+                            size={product.size || 'N/A'} 
+                        />
+                        </Link>
+                    ))}
+                </div>
+            </div>
+            <Footer />
+        </>
+    );
 }
