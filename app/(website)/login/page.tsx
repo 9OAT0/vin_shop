@@ -38,7 +38,7 @@ export default function LoginPage() {
       const data = await response.json();
         console.log('เข้าสู่ระบบสำเร็จ, token:', data.token);
         localStorage.setItem('token', data.token); // เก็บ token ใน localStorage
-        localStorage.setItem('userId', data.userId); // เก็บ userId ถ้าต้องการ
+        localStorage.setItem('userId', data.user_id); // เก็บ userId ถ้าต้องการ
         router.push('/');
     } catch (err: any) {
       console.error(err.message);

@@ -10,6 +10,8 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'User ID and Product ID are required.' });
         }
 
+        console.log(`Received request with User ID: ${userId} and Product ID: ${productId}`);
+
         try {
             const user = await prisma.users.findUnique({
                 where: { id: userId },
@@ -23,7 +25,6 @@ export default async function handler(req, res) {
             let cart;
 
             if (!user.cart) {
-                // Create new cart
                 cart = await prisma.cart.create({
                     data: {
                         userId: userId,
@@ -38,7 +39,6 @@ export default async function handler(req, res) {
 
                 return res.status(201).json(cart);
             } else {
-                // Check if product exists in cart
                 const productExists = await prisma.cartProduct.findFirst({
                     where: {
                         cartId: user.cart.id,
@@ -50,7 +50,6 @@ export default async function handler(req, res) {
                     return res.status(400).json({ error: 'Product already in cart' });
                 }
 
-                // Add product to existing cart
                 const cartProduct = await prisma.cartProduct.create({
                     data: {
                         cartId: user.cart.id,
@@ -62,8 +61,11 @@ export default async function handler(req, res) {
                 return res.status(201).json(cartProduct);
             }
         } catch (error) {
-            console.error('Error adding to cart:', error); // Log error object
-            return res.status(500).json({ error: 'Error adding to cart', details: error.message });
+            console.error('Error during operation:', {
+                message: error.message,
+                stack: error.stack,
+            });
+            return res.status(500).json({ error: 'Internal Server Error', details: error.message });
         }
     } else {
         res.setHeader('Allow', ['POST']);
@@ -75,5 +77,8 @@ async function getProductFirstPicture(productId) {
     const product = await prisma.products.findUnique({
         where: { id: productId },
     });
-    return product?.pictures[0] || null;
+    if (!product) {
+        throw new Error(`Product with ID ${productId} not found`);
+    }
+    return product.pictures[0] || null; // Return the first picture or null
 }
