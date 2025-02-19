@@ -42,7 +42,7 @@ export default function CartPage() {
                             <h1 className="">YOUR CART</h1>
                         </div>
                         {cartItems.length === 0 ? (
-                            <div className="pl-5"><h2 className="text-[14px]">Your cart is empty</h2></div>
+                            <div className="pl-5"><h2 className="text-[14px]">Your cart is empty...</h2></div>
                         ) : (
                             cartItems.map(item => (
                                 <div key={item.id} className="pl-5">
