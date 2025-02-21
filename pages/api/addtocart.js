@@ -47,7 +47,9 @@ export default async function handler(req, res) {
                 });
 
                 if (productExists) {
-                    return res.status(400).json({ error: 'Product already in cart' });
+
+                    return res.status(201).json({ error: 'Product already in cart' });
+
                 }
 
                 const cartProduct = await prisma.cartProduct.create({
