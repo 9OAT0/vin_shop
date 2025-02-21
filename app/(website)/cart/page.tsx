@@ -7,17 +7,34 @@ import Footer from "../components/Footer";
 interface CartItem {
     id: number; // หรือ string ขึ้นอยู่กับประเภทจริงของ ID
     productName: string; // ชื่อสินค้าหรือข้อมูลอื่น ๆ ที่คุณต้องการ
-    // เพิ่มฟิลด์อื่น ๆ ตามที่คุณต้องการ
 }
 
 export default function CartPage() {
     const [cartItems, setCartItems] = useState<CartItem[]>([]);
-    const userId = "YOUR_USER_ID"; // เปลี่ยนเป็นตรรกะการรับ ID ของผู้ใช้ที่แท้จริง
+    const [userId, setUserId] = useState<string | null>(null); // state สำหรับ userId
+    const [token, setToken] = useState<string | null>(null); // state สำหรับ token
+
+    useEffect(() => {
+        // ดึงข้อมูลจาก localStorage และตั้งค่า state
+        const storedUserId = localStorage.getItem('userId');
+        const storedToken = localStorage.getItem('token');
+        if (storedUserId) setUserId(storedUserId);
+        if (storedToken) setToken(storedToken);
+    }, []);
 
     useEffect(() => {
         const fetchCartItems = async () => {
+            if (!userId || !token) return; // ไม่ทำงานถ้า userId หรือ token ไม่มี
+
             try {
-                const response = await fetch(`/api/checkCart?userId=${userId}`);
+                const response = await fetch(`/api/checkCart?userId=${userId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                });
+                
                 if (response.ok) {
                     const data: CartItem[] = await response.json();
                     setCartItems(data);
@@ -30,7 +47,7 @@ export default function CartPage() {
         };
 
         fetchCartItems();
-    }, [userId]);
+    }, [userId, token]); // dependency array ที่ใช้ state ที่ต้องการ
 
     return (
         <>
