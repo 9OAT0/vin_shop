@@ -3,8 +3,8 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 export default async function handler(req, res) {
-  if (req.method === 'POST') {
-    const { userId, productId } = req.body; // ดึง userId และ productId จาก body
+    if (req.method === 'POST') {
+        const { userId, productId } = req.body;
 
         if (!userId || !productId) {
             return res.status(400).json({ error: 'User ID and Product ID are required.' });
@@ -47,7 +47,9 @@ export default async function handler(req, res) {
                 });
 
                 if (productExists) {
+
                     return res.status(201).json({ error: 'Product already in cart' });
+
                 }
 
                 const cartProduct = await prisma.cartProduct.create({
@@ -73,10 +75,12 @@ export default async function handler(req, res) {
     }
 }
 
-// ฟังก์ชันสำหรับดึงรูปภาพแรกของผลิตภัณฑ์
 async function getProductFirstPicture(productId) {
-  const product = await prisma.products.findUnique({
-    where: { id: productId },
-  });
-  return product?.pictures[0] || null; // คืนค่าภาพแรกหรือ null ถ้าไม่มี
+    const product = await prisma.products.findUnique({
+        where: { id: productId },
+    });
+    if (!product) {
+        throw new Error(`Product with ID ${productId} not found`);
+    }
+    return product.pictures[0] || null; // Return the first picture or null
 }
