@@ -42,6 +42,7 @@ model CartProduct {
   id          String       @id @default(auto()) @map("_id") @db.ObjectId
   cartId      String
   productId   String
+  productName String
   firstPicture String
   cart        Cart         @relation(fields: [cartId], references: [id])
   product     Products     @relation(fields: [productId], references: [id])
