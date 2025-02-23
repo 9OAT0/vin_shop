@@ -46,10 +46,11 @@ export default async function handler(req, res) {
             return res.status(401).json({ error: 'Invalid email or password' });
         }
 
-        const tokenPayload = { id: user.id, email: user.email };
+        const tokenPayload = { id: user.id, role: user.role };
         const user_id = user.id
+        const user_role = user.role
 
-        if (!tokenPayload.id || !tokenPayload.email) {
+        if (!tokenPayload.id || !tokenPayload.role) {
             console.error('Invalid payload:', tokenPayload);
             return res.status(500).json({ error: 'Failed to generate token' });
         }
@@ -58,7 +59,7 @@ export default async function handler(req, res) {
             expiresIn: '12h',
         });
 
-        res.status(200).json({ message: 'Login successful', token, user_id });
+        res.status(200).json({ message: 'Login successful', token, user_id , user_role });
     } catch (error) {
         console.error('Error:', error.message || error);
         res.status(500).json({ error: 'Login failed', details: error.message || error });
