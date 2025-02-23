@@ -29,6 +29,8 @@ export default async function handler(req, res) {
             where: { email },
         });
 
+        console.log(user)
+
         if (!user) {
             console.error('User not found for email:', email);
             return res.status(401).json({ error: 'Invalid email or password' });
