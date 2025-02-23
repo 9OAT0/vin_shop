@@ -33,12 +33,14 @@ export default function CartPage() {
                     method: 'GET',
                     headers: {
                         'Authorization': `Bearer ${token}`, // รวม Token ใน Header
-                        'Content-Type': 'application/json'
-                    }
+                        'Content-Type': 'application/json',
+                    },
                 });
                 if (response.ok) {
                     const data: CartItem[] = await response.json();
                     setCartItems(data);
+                } else if (response.status === 403) {
+                    setErrorMessage('ไม่สามารถดึงข้อมูลสินค้าจากตะกร้าได้: Forbidden'); // ข้อความเมื่อถูกห้าม
                 } else {
                     setErrorMessage('ไม่สามารถดึงข้อมูลสินค้าจากตะกร้าได้: ' + response.statusText);
                 }
