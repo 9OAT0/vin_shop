@@ -49,6 +49,19 @@ export default async function handler(req, res) {
     } finally {
       await prisma.$disconnect();
     }
+  } else if (method === 'DELETE'){
+    try {
+      const deletedProduct = await prisma.products.delete({
+        where: {id},
+      });
+
+      res.status(200).json({ message: 'Product deleted successfully', deletedProduct});
+    } catch (error) {
+      console.error('Error deleting product', error.message);
+      res.status(500).json({ error: 'Error deleting product:', details: error.message }) 
+    } finally {
+      await prisma.$disconnect
+    }
   } else {
     res.status(405).json({ error: 'Method Not Allowed' });
   }

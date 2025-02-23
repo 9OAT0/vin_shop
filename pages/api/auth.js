@@ -18,3 +18,12 @@ export const authenticateToken = (req, res, next) => {
         next(); // เรียกใช้ฟังก์ชันถัดไป
     });
 };
+
+export const authenticateAdmin = (req, res, next) => {
+    authenticateToken(req, res, () => {
+      if (req.user.role !== 'ADMIN') {
+        return res.status(403).json({ error: 'Access denied. Admins only.' });
+      }
+      next();
+    });
+  }

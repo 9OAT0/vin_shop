@@ -13,39 +13,38 @@ model Users {
   location  String
   name      String
   password  String
+  role      String  @default("USER")  // Added role field with a default value of "USER"
   cart      Cart?   @relation("UserCart")
-  cartId    String?  // Foreign key for Cart
-
-  Order Order[]
+  cartId    String? // Foreign key for Cart
+  Order     Order[]
 }
 
 model Cart {
-  id        String     @id @default(auto()) @map("_id") @db.ObjectId
-  userId    String     @unique // ID ของผู้ใช้
-  user      Users      @relation("UserCart", fields: [userId], references: [id])
-  products  CartProduct[] // เวลาที่สินค้าถูกจัดการใน Cart
+  id          String       @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String       @unique // ID ของผู้ใช้
+  user        Users        @relation("UserCart", fields: [userId], references: [id])
+  products    CartProduct[] // เวลาที่สินค้าถูกจัดการใน Cart
 }
 
 model Products {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  id          String       @id @default(auto()) @map("_id") @db.ObjectId
   name        String
-  pictures    String[] // Array ของ URL images
+  pictures    String[]     // Array ของ URL images
   price       Float?
-  size        String?  // สามารถเป็น null
+  size        String?      // สามารถเป็น null
   description String
   cartProducts CartProduct[] // เชื่อมโยงกลับไปที่ CartProduct
-
-  Order Order[]
+  Order       Order[]
 }
 
 // โมเดลสำหรับการเชื่อมโยงระหว่าง Cart และ Products
 model CartProduct {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  cartId    String
-  productId String
+  id          String       @id @default(auto()) @map("_id") @db.ObjectId
+  cartId      String
+  productId   String
   firstPicture String
-  cart      Cart     @relation(fields: [cartId], references: [id])
-  product   Products @relation(fields: [productId], references: [id])
+  cart        Cart         @relation(fields: [cartId], references: [id])
+  product     Products     @relation(fields: [productId], references: [id])
 }
 
 enum OrderStatus {
@@ -56,16 +55,16 @@ enum OrderStatus {
 }
 
 model Order {
-  id          String  @id @default(auto()) @map("_id") @db.ObjectId
+  id          String       @id @default(auto()) @map("_id") @db.ObjectId
   productId   String
   userId      String
   picture     String? 
   address     String
   paymentSlip String?
   status      OrderStatus  // สถานะการสั่งซื้อ เช่น 'Pending', 'Shipped', 'Delivered'
-  trackingId  String? // ID สำหรับติดตามการจัดส่ง
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  user        Users    @relation(fields: [userId], references: [id])
-  product     Products @relation(fields: [productId], references: [id])
+  trackingId  String?      // ID สำหรับติดตามการจัดส่ง
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  user        Users        @relation(fields: [userId], references: [id])
+  product     Products     @relation(fields: [productId], references: [id])
 }   
