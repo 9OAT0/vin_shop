@@ -78,15 +78,19 @@ export default function BuyPage() {
                 }),
             });
             
-            if (!response.ok) {
+            if (response.status !== 201) {
                 const errorData = await response.text();
                 console.error('Error data from API:', errorData); // Log ข้อมูลข้อผิดพลาด
-                throw new Error('Failed to add product to cart');
-            }
-    
-            const result = await response.json();
+                alert('Product already in cart');
+            } 
+            else {
+                const result = await response.json();
             console.log('Product added to cart:', result);
             alert('Product added to cart successfully!');
+
+            }
+    
+            
         } catch (error) {
             if (error instanceof Error) {
                 console.error('Error adding product to cart:', error.message);

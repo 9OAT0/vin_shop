@@ -47,7 +47,13 @@ export default async function handler(req, res) {
                 });
 
                 if (productExists) {
+<<<<<<< Updated upstream
                     return res.status(400).json({ error: 'Product already in cart' });
+=======
+
+                    return res.status(202).json({ error: 'Product already in cart' });
+
+>>>>>>> Stashed changes
                 }
 
                 const cartProduct = await prisma.cartProduct.create({
