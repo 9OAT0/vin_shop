@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation"; // เปลี่ยนไปใช้ useRouter จาก next/navigation
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import Link from "next/link";
 
 interface Product {
     productName: string;
@@ -93,9 +95,17 @@ export default function CartPage() {
                             </div>
                         ) : (
                             cartItems.map(item => (
-                                <div key={item.id} className="pl-5 border-b py-2 flex items-center">
-                                    <img src={item.firstPicture} alt={item.productName} className="w-20 h-20 mr-4" />
-                                    <span>{item.productName}</span>
+                                <div key={item.id} className="px-5 flex items-center justify-between">
+                                    <Link className="flex items-center cursor-pointer" href={`/buy?id=${item.id}`}>
+                                        <img src={item.firstPicture} alt={item.productName} className="w-16 h-16 object-cover mr-4" />
+                                        <div>{item.productName}</div>
+                                    </Link>
+                                    <button 
+                                        onClick={() => handleDelete(item.id)} 
+                                        className="bg-red-500 text-white px-4 py-2 rounded transition hover:bg-red-600"
+                                    >
+                                        Delete
+                                    </button>
                                 </div>
                             ))
                         )}

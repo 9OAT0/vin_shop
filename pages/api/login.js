@@ -52,6 +52,9 @@ export default async function handler(req, res) {
         const user_id = user.id
         const user_role = user.role
 
+        console.log(tokenPayload)
+        console.log(user)
+
         if (!tokenPayload.id || !tokenPayload.role) {
             console.error('Invalid payload:', tokenPayload);
             return res.status(500).json({ error: 'Failed to generate token' });
