@@ -72,6 +72,11 @@ export default function CartPage() {
         fetchCartItems();
     }, []);
     
+    const handleDelete = (id: string) => {
+        setCartItems(prevItems => prevItems.filter(item => item.id !== id));
+        console.log(`Product with ID: ${id} has been removed from the cart`);
+    };
+
     return (
         <>
             <div className="min-h-screen bg-white text-black">
@@ -96,7 +101,7 @@ export default function CartPage() {
                         ) : (
                             cartItems.map(item => (
                                 <div key={item.id} className="px-5 flex items-center justify-between">
-                                    <Link className="flex items-center cursor-pointer" href={`/buy?id=${item.id}`}>
+                                    <Link className="flex items-center cursor-pointer" href={`/buy?id=${item.productId}`}>
                                         <img src={item.firstPicture} alt={item.productName} className="w-16 h-16 object-cover mr-4" />
                                         <div>{item.productName}</div>
                                     </Link>
