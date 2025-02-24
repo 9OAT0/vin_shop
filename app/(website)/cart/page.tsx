@@ -10,7 +10,7 @@ interface CartItem {
     id: string; 
     productName: string; 
     firstPicture: string; 
-    productId: string;
+    productId: string
 }
 
 export default function CartPage() {
@@ -56,7 +56,6 @@ export default function CartPage() {
         console.log(`Product with ID: ${id} has been removed from the cart`);
     };
 
-
     return (
         <>
             <div className="min-h-screen bg-white text-black">
@@ -71,7 +70,7 @@ export default function CartPage() {
                         ) : (
                             cartItems.map(item => (
                                 <div key={item.id} className="px-5 flex items-center justify-between">
-                                    <Link className="flex items-center cursor-pointer" href={`/buy?id=${item.productId}`}>
+                                    <Link className="flex items-center cursor-pointer" href={`/buy?id=${item.id}`}>
                                         <img src={item.firstPicture} alt={item.productName} className="w-16 h-16 object-cover mr-4" />
                                         <div>{item.productName}</div>
                                     </Link>
