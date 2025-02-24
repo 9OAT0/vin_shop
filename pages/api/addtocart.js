@@ -22,6 +22,15 @@ export default async function handler(req, res) {
                 return res.status(404).json({ error: 'User not found' });
             }
 
+            // Fetch product details to get the product name and picture
+            const product = await prisma.products.findUnique({
+                where: { id: productId },
+            });
+
+            if (!product) {
+                return res.status(404).json({ error: 'Product not found' });
+            }
+
             let cart;
 
             if (!user.cart) {
@@ -32,7 +41,8 @@ export default async function handler(req, res) {
                         products: {
                             create: {
                                 productId: productId,
-                                firstPicture: await getProductFirstPicture(productId),
+                                productName: product.name, // Include product name
+                                firstPicture: product.pictures[0] || null, // Set first picture
                             },
                         },
                     },
@@ -51,22 +61,13 @@ export default async function handler(req, res) {
                     return res.status(409).json({ error: 'Product already in cart' });
                 }
 
-                // Fetch product details to get the product name
-                const product = await prisma.products.findUnique({
-                    where: { id: productId },
-                });
-
-                if (!product) {
-                    return res.status(404).json({ error: 'Product not found' });
-                }
-
                 // Create a new cart product
                 const cartProduct = await prisma.cartProduct.create({
                     data: {
                         cartId: user.cart.id,
                         productId: productId,
-                        firstPicture: await getProductFirstPicture(productId),
-                        productName: product.name, // Set the name from the fetched product
+                        productName: product.name, // Use the fetched product name
+                        firstPicture: product.pictures[0] || null, // Use the fetched first picture
                     },
                 });
 
@@ -83,15 +84,4 @@ export default async function handler(req, res) {
         res.setHeader('Allow', ['POST']);
         return res.status(405).end(`Method ${req.method} Not Allowed`);
     }
-}
-
-// Function to get the first picture of a product
-async function getProductFirstPicture(productId) {
-    const product = await prisma.products.findUnique({
-        where: { id: productId },
-    });
-    if (!product) {
-        throw new Error(`Product with ID ${productId} not found`);
-    }
-    return product.pictures[0] || null; // Return the first picture or null
 }

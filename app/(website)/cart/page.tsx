@@ -1,53 +1,60 @@
 'use client';
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation"; // เปลี่ยนไปใช้ useRouter จาก next/navigation
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import Link from "next/link";
 
 interface CartItem {
-    id: number; // หรือ string ขึ้นอยู่กับประเภทจริงของ ID
-    productName: string; // ชื่อสินค้าหรือข้อมูลอื่น ๆ ที่คุณต้องการ
+    id: string; 
+    productName: string; 
+    firstPicture: string; 
+    productId: string
 }
 
 export default function CartPage() {
     const [cartItems, setCartItems] = useState<CartItem[]>([]);
-    const [userId, setUserId] = useState<string | null>(null); // state สำหรับ userId
-    const [token, setToken] = useState<string | null>(null); // state สำหรับ token
+    const [userId, setUserId] = useState<string | null>(null);
+    const router = useRouter(); // ใช้ useRouter จาก next/navigation
 
     useEffect(() => {
-        // ดึงข้อมูลจาก localStorage และตั้งค่า state
-        const storedUserId = localStorage.getItem('userId');
-        const storedToken = localStorage.getItem('token');
-        if (storedUserId) setUserId(storedUserId);
-        if (storedToken) setToken(storedToken);
+        const storedUserId = localStorage.getItem('userId'); // ดึง User ID จาก Local Storage
+        if (storedUserId) {
+            setUserId(storedUserId); 
+        } else {
+            console.error('ไม่พบ User ID ใน localStorage');
+        }
     }, []);
 
     useEffect(() => {
         const fetchCartItems = async () => {
-            if (!userId || !token) return; // ไม่ทำงานถ้า userId หรือ token ไม่มี
-
-            try {
-                const response = await fetch(`/api/checkCart?userId=${userId}`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json',
-                    },
-                });
-                
-                if (response.ok) {
-                    const data: CartItem[] = await response.json();
-                    setCartItems(data);
-                } else {
-                    console.error('ไม่สามารถดึงข้อมูลสินค้าจากตะกร้าได้:', response.statusText);
+            if (userId) { 
+                try {
+                    const response = await fetch(`/api/getCartDetails?userId=${userId}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.products && Array.isArray(data.products)) {
+                            setCartItems(data.products);
+                        } else {
+                            console.error('ข้อมูลที่ได้รับไม่ใช่ Array หรือไม่พบฟิลด์ products:', data);
+                        }
+                    } else {
+                        console.error('ไม่สามารถดึงข้อมูลสินค้าจากตะกร้าได้:', response.statusText);
+                    }
+                } catch (error) {
+                    console.error('เกิดข้อผิดพลาดในการดึงข้อมูลสินค้าจากตะกร้า:', error);
                 }
-            } catch (error) {
-                console.error('เกิดข้อผิดพลาดในการดึงข้อมูลสินค้าจากตะกร้า:', error);
             }
         };
 
         fetchCartItems();
-    }, [userId, token]); // dependency array ที่ใช้ state ที่ต้องการ
+    }, [userId]);
+
+    const handleDelete = (id: string) => {
+        setCartItems(prevItems => prevItems.filter(item => item.id !== id));
+        console.log(`Product with ID: ${id} has been removed from the cart`);
+    };
 
     return (
         <>
@@ -62,8 +69,17 @@ export default function CartPage() {
                             <div className="pl-5"><h2 className="text-[14px]">Your cart is empty...</h2></div>
                         ) : (
                             cartItems.map(item => (
-                                <div key={item.id} className="pl-5">
-                                    <div>{item.productName}</div>
+                                <div key={item.id} className="px-5 flex items-center justify-between">
+                                    <Link className="flex items-center cursor-pointer" href={`/buy?id=${item.id}`}>
+                                        <img src={item.firstPicture} alt={item.productName} className="w-16 h-16 object-cover mr-4" />
+                                        <div>{item.productName}</div>
+                                    </Link>
+                                    <button 
+                                        onClick={() => handleDelete(item.id)} 
+                                        className="bg-red-500 text-white px-4 py-2 rounded transition hover:bg-red-600"
+                                    >
+                                        Delete
+                                    </button>
                                 </div>
                             ))
                         )}
