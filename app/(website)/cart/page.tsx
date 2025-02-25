@@ -6,51 +6,72 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import Link from "next/link";
 
-interface CartItem {
-    id: string; 
-    productName: string; 
-    firstPicture: string; 
-    productId: string
+interface Product {
+    productName: string;
+    id: string;
+    cartId: string;
+    productId: string;
+    firstPicture: string;
+}
+
+interface CartDetails {
+    id: string;
+    userId: string;
+    products: Product[];
 }
 
 export default function CartPage() {
-    const [cartItems, setCartItems] = useState<CartItem[]>([]);
+    const [cartItems, setCartItems] = useState<Product[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [errorMessage, setErrorMessage] = useState('');
     const [userId, setUserId] = useState<string | null>(null);
-    const router = useRouter(); // ใช้ useRouter จาก next/navigation
+    const [authToken, setAuthToken] = useState<string | null>(null);
 
     useEffect(() => {
-        const storedUserId = localStorage.getItem('userId'); // ดึง User ID จาก Local Storage
-        if (storedUserId) {
-            setUserId(storedUserId); 
-        } else {
-            console.error('ไม่พบ User ID ใน localStorage');
-        }
-    }, []);
+        const storedUserId = localStorage.getItem("userId");
+        const storedAuthToken = localStorage.getItem("token");
 
-    useEffect(() => {
+        setUserId(storedUserId);
+        setAuthToken(storedAuthToken);
+
         const fetchCartItems = async () => {
-            if (userId) { 
-                try {
-                    const response = await fetch(`/api/getCartDetails?userId=${userId}`);
+            setLoading(true);
+            try {
+                if (storedUserId && storedAuthToken) {
+                    const response = await fetch(`/api/getCartDetails?userId=${storedUserId}`, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${storedAuthToken}`,
+                            'Content-Type': 'application/json',
+                        },
+                    });
+
                     if (response.ok) {
-                        const data = await response.json();
-                        if (data.products && Array.isArray(data.products)) {
+                        const data: CartDetails = await response.json();
+                        if (Array.isArray(data.products)) {
                             setCartItems(data.products);
                         } else {
-                            console.error('ข้อมูลที่ได้รับไม่ใช่ Array หรือไม่พบฟิลด์ products:', data);
+                            setCartItems([]);
+                            setErrorMessage('ได้รับข้อมูลที่ไม่ถูกต้องจากเซิร์ฟเวอร์');
                         }
                     } else {
-                        console.error('ไม่สามารถดึงข้อมูลสินค้าจากตะกร้าได้:', response.statusText);
+                        setErrorMessage(`ไม่สามารถดึงข้อมูลสินค้าจากตะกร้าได้: ${response.statusText}`);
                     }
-                } catch (error) {
-                    console.error('เกิดข้อผิดพลาดในการดึงข้อมูลสินค้าจากตะกร้า:', error);
+                } else {
+                    setErrorMessage('โปรดเข้าสู่ระบบเพื่อดูตะกร้าสินค้า');
                 }
+            } catch (error) {
+                if (error instanceof Error) {
+                    setErrorMessage('เกิดข้อผิดพลาดในการดึงข้อมูลสินค้าจากตะกร้า: ' + error.message);
+                }
+            } finally {
+                setLoading(false);
             }
         };
 
         fetchCartItems();
-    }, [userId]);
-
+    }, []);
+    
     const handleDelete = (id: string) => {
         setCartItems(prevItems => prevItems.filter(item => item.id !== id));
         console.log(`Product with ID: ${id} has been removed from the cart`);
@@ -63,14 +84,24 @@ export default function CartPage() {
                     <Navbar />
                     <div className="flex flex-col gap-5">
                         <div className="pl-5">
-                            <h1 className="">YOUR CART</h1>
+                            <h1 className="font-semibold text-xl">YOUR CART</h1>
                         </div>
-                        {cartItems.length === 0 ? (
-                            <div className="pl-5"><h2 className="text-[14px]">Your cart is empty...</h2></div>
+
+                        {loading ? (
+                            <div className="pl-5"><h2 className="text-[14px]">กำลังโหลด...</h2></div>
+                        ) : errorMessage ? (
+                            <div className="pl-5">
+
+                                <h2 className="text-red-600">{errorMessage}</h2>
+                            </div>
+                        ) : cartItems.length === 0 ? (
+                            <div className="pl-5">
+                                <h2 className="text-[14px]">ตะกร้าของคุณว่างเปล่า...</h2>
+                            </div>
                         ) : (
                             cartItems.map(item => (
                                 <div key={item.id} className="px-5 flex items-center justify-between">
-                                    <Link className="flex items-center cursor-pointer" href={`/buy?id=${item.id}`}>
+                                    <Link className="flex items-center cursor-pointer" href={`/buy?id=${item.productId}`}>
                                         <img src={item.firstPicture} alt={item.productName} className="w-16 h-16 object-cover mr-4" />
                                         <div>{item.productName}</div>
                                     </Link>
@@ -84,10 +115,10 @@ export default function CartPage() {
                             ))
                         )}
                         <div className="pl-5">
-                            <a href="/" className="border-black border-b">Continue shopping →</a>
+                            <a href="/" className="border-black border-b">กลับไปช็อปปิ้ง →</a>
                         </div>
                     </div>
-                    <img src="/Rectangle 271.png" alt="" className="w-full h-12" />
+                    <img src="/Rectangle 271.png" alt="Banner" className="w-full h-12" />
                 </div>
                 <Footer />
             </div>

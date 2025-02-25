@@ -1,16 +1,25 @@
 import { useState, useEffect, useRef } from "react";
+import axios from "axios"; // นำเข้า axios
 
 export default function ComponentsNavbar() {
     const [searchTerm, setSearchTerm] = useState('');
     const [showSearchBar, setShowSearchBar] = useState(false);
-    const searchBarRef = useRef<HTMLDivElement>(null); // ใช้ ref เพื่ออ้างถึง search bar
+    const searchBarRef = useRef<HTMLDivElement>(null); 
 
-    const handleSearch = () => {
+    const handleSearch = async () => {
         console.log("Searching for:", searchTerm);
-        window.location.href = `/search?query=${encodeURIComponent(searchTerm)}`;
+        try {
+            const response = await axios.get(`/api/products?name=${encodeURIComponent(searchTerm)}`);
+            console.log("Search Results:", response.data);
+            // จัดการผลลัพธ์การค้นหา เช่น นำทางไปยังหน้าแสดงผลลัพธ์ หรือแสดงผลลัพธ์
+            // ตัวอย่างเช่น:
+            // window.location.href = `/results?query=${encodeURIComponent(searchTerm)}`;
+        } catch (error) {
+            console.error("Error fetching products:", error);
+            // แสดงข้อความแสดงข้อผิดพลาดถ้าต้องการ
+        }
     };
 
-    // ฟังก์ชันสำหรับปิด search bar
     const closeSearchBar = () => {
         setShowSearchBar(false);
     };
@@ -22,7 +31,6 @@ export default function ComponentsNavbar() {
             }
         };
 
-        // เพิ่ม event listener
         document.addEventListener("mousedown", handleClickOutside);
         return () => {
             document.removeEventListener("mousedown", handleClickOutside);
@@ -42,7 +50,7 @@ export default function ComponentsNavbar() {
                         {showSearchBar ? "" : "SEARCH"}
                     </button>
                     {showSearchBar && (
-                        <div className="flex gap-2" ref={searchBarRef}> {/* ใช้ ref ที่นี่ */}
+                        <div className="flex gap-2" ref={searchBarRef}>
                             <input 
                                 type="text" 
                                 placeholder="Search..." 
