@@ -1,8 +1,11 @@
 import { PrismaClient } from '@prisma/client';
+import { authenticateToken } from './auth';
+
 
 const prisma = new PrismaClient();
 
 export default async function handler(req, res) {
+    await authenticateToken(req, res, async() => {
     if (req.method === 'GET') {
         try {
             const users = await prisma.Users.findMany();
@@ -13,4 +16,5 @@ export default async function handler(req, res) {
     } else {
         res.status(405).json({ message: 'Method Not Allowed' });
     }
+}):
 }

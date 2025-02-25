@@ -3,74 +3,85 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 export default async function handler(req, res) {
-  if (req.method === 'POST') {
-    const { userId, productId } = req.body;
+    if (req.method === 'POST') {
+        const { userId, productId } = req.body;
 
-    try {
-      const cart = await addToCart(userId, productId);
-      res.status(200).json(cart);
-    } catch (error) {
-      res.status(400).json({ error: error.message });
+        if (!userId || !productId) {
+            return res.status(400).json({ error: 'User ID and Product ID are required.' });
+        }
+
+        console.log(`Received request with User ID: ${userId} and Product ID: ${productId}`);
+
+        try {
+            const user = await prisma.users.findUnique({
+                where: { id: userId },
+                include: { cart: true }, // Only include cart
+            });
+
+            if (!user) {
+                return res.status(404).json({ error: 'User not found' });
+            }
+
+            // Fetch product details to get the product name and picture
+            const product = await prisma.products.findUnique({
+                where: { id: productId },
+            });
+
+            if (!product) {
+                return res.status(404).json({ error: 'Product not found' });
+            }
+
+            let cart;
+
+            if (!user.cart) {
+                // Create a new cart if the user does not have one
+                cart = await prisma.cart.create({
+                    data: {
+                        userId: userId,
+                        products: {
+                            create: {
+                                productId: productId,
+                                productName: product.name, // Include product name
+                                firstPicture: product.pictures[0] || null, // Set first picture
+                            },
+                        },
+                    },
+                });
+
+                return res.status(201).json(cart);
+            } else {
+                const productExists = await prisma.cartProduct.findFirst({
+                    where: {
+                        cartId: user.cart.id,
+                        productId: productId,
+                    },
+                });
+
+                if (productExists) {
+                    return res.status(409).json({ error: 'Product already in cart' });
+                }
+
+                // Create a new cart product
+                const cartProduct = await prisma.cartProduct.create({
+                    data: {
+                        cartId: user.cart.id,
+                        productId: productId,
+                        productName: product.name, // Use the fetched product name
+                        firstPicture: product.pictures[0] || null, // Use the fetched first picture
+                    },
+                });
+
+                return res.status(201).json(cartProduct);
+            }
+        } catch (error) {
+            console.error('Error during operation:', {
+                message: error.message,
+                stack: error.stack,
+            });
+            return res.status(500).json({ error: 'Internal Server Error', details: error.message });
+        }
+    } else {
+        res.setHeader('Allow', ['POST']);
+        return res.status(405).end(`Method ${req.method} Not Allowed`);
     }
-  } else {
-    res.setHeader('Allow', ['POST']);
-    res.status(405).end(`Method ${req.method} Not Allowed`);
-  }
-}
-
-async function addToCart(userId, productId) {
-  try {
-    const user = await prisma.users.findUnique({
-      where: { id: userId },
-      include: { cart: true },
-    });
-
-    if (!user) {
-      throw new Error('User not found');
-    }
-
-    if (!user.cart) {
-      // สร้าง Cart ใหม่และเพิ่มผลิตภัณฑ์แรก
-      const newCart = await prisma.cart.create({
-        data: {
-          userId: userId,
-          products: {
-            create: {
-              productId: productId,
-            },
-          },
-        },
-      });
-      return newCart;
-    }
-
-    // ตรวจสอบว่าผลิตภัณฑ์อยู่ใน cart แล้วหรือไม่
-    const productExists = await prisma.cartProduct.findFirst({
-      where: {
-        cartId: user.cart.id,
-        productId: productId,
-      },
-    });
-
-    if (productExists) {
-      throw new Error('สินค้านี้มีอยู่ในตะกร้าแล้ว');
-    }
-
-    // อัปเดต cart โดยการเพิ่ม CartProduct ใหม่
-    const updatedCart = await prisma.cart.update({
-      where: { id: user.cart.id },
-      data: {
-        products: {
-          create: {
-            productId: productId,
-          },
-        },
-      },
-    });
-
-    return updatedCart;
-  } catch (error) {
-    console.error(error.message);
-    throw error;
-  }
 }
