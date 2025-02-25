@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useParams, useHistory } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 
 interface Product {
   id: string;
@@ -12,7 +12,7 @@ interface Product {
 
 const EditProduct: React.FC = () => {
   const { productId } = useParams<{ productId: string }>(); 
-  const history = useHistory();
+  const navigate = useNavigate();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -29,14 +29,13 @@ const EditProduct: React.FC = () => {
     }
   };
 
-  // Handle product update
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!product) return;
 
     try {
       await axios.put(`/api/productUpdate/${productId}`, product);
-      history.push('/dashboard'); 
+      navigate('/dashboard'); 
     } catch (err) {
       setError("Error updating product");
       console.error(err);
