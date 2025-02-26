@@ -11,8 +11,8 @@ interface Product {
 }
 
 const EditProduct: React.FC = () => {
-  const { productId } = useParams<{ productId: string }>(); 
-  const navigate = useNavigate();
+  const { productId } = useParams<{ productId: string }>();
+  const navigate = useNavigate(); 
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +35,7 @@ const EditProduct: React.FC = () => {
 
     try {
       await axios.put(`/api/productUpdate/${productId}`, product);
-      navigate('/dashboard'); 
+      navigate('/dashboard');
     } catch (err) {
       setError("Error updating product");
       console.error(err);
