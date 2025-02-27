@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation"; // เปลี่ยนไปใช้ useRouter จาก next/navigation
+import { useRouter } from "next/navigation"; 
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import Link from "next/link";
@@ -23,9 +23,10 @@ interface CartDetails {
 export default function CartPage() {
     const [cartItems, setCartItems] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
-    const [errorMessage, setErrorMessage] = useState('');
+    const [errorMessage, setErrorMessage] = useState<string>('');
     const [userId, setUserId] = useState<string | null>(null);
     const [authToken, setAuthToken] = useState<string | null>(null);
+    const [isOverlayVisible, setOverlayVisible] = useState<boolean>(false);
 
     useEffect(() => {
         const storedUserId = localStorage.getItem("userId");
@@ -71,11 +72,41 @@ export default function CartPage() {
 
         fetchCartItems();
     }, []);
-    
+
     const handleDelete = (id: string) => {
         setCartItems(prevItems => prevItems.filter(item => item.id !== id));
         console.log(`Product with ID: ${id} has been removed from the cart`);
     };
+
+    const toggleOverlay = () => {
+        setOverlayVisible(!isOverlayVisible);
+    };
+
+    const handlePayment = async () => {
+        try {
+            const response = await fetch('/api/payment/id', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${authToken}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ userId }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                window.location.href = data.paymentLink; 
+            } else {
+                console.error(data.error);
+            }
+        } catch (error) {
+            console.error('Error during payment:', error)
+
+            } finally {
+                toggleOverlay(); // ปิด Overlay หลังจากชำระเงิน
+            }
+        };
 
     return (
         <>
@@ -91,7 +122,6 @@ export default function CartPage() {
                             <div className="pl-5"><h2 className="text-[14px]">กำลังโหลด...</h2></div>
                         ) : errorMessage ? (
                             <div className="pl-5">
-
                                 <h2 className="text-red-600">{errorMessage}</h2>
                             </div>
                         ) : cartItems.length === 0 ? (
@@ -114,6 +144,37 @@ export default function CartPage() {
                                 </div>
                             ))
                         )}
+
+                        <div className="flex justify-center items-center">
+                            <button 
+                                onClick={toggleOverlay}
+                                className="bg-black text-white w-32 h-10 flex justify-center items-center"
+                            >
+                                Make payment
+                            </button>
+                        </div>
+
+                        {isOverlayVisible && (
+                            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" onClick={toggleOverlay}>
+                                <div className="bg-white rounded-lg p-6" onClick={(e) => e.stopPropagation()}>
+                                    <h2 className="text-lg font-bold">Make Payment</h2>
+                                    <p>รายละเอียดชำระเงิน...</p>
+                                    <button 
+                                        className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
+                                        onClick={handlePayment} // เรียกใช้ handlePayment
+                                    >
+                                        ยืนยันการชำระเงิน
+                                    </button>
+                                    <button 
+                                        className="mt-2 px-4 py-2 bg-red-500 text-white rounded"
+                                        onClick={toggleOverlay} // ปิด Overlay
+                                    >
+                                        ยกเลิก
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
                         <div className="pl-5">
                             <a href="/" className="border-black border-b">กลับไปช็อปปิ้ง →</a>
                         </div>

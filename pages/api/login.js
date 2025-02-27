@@ -57,7 +57,7 @@ export default async function handler(req, res) {
 
         if (!tokenPayload.id || !tokenPayload.role) {
             console.error('Invalid payload:', tokenPayload);
-            return res.status(500).json({ error: 'Failed to generate token' });
+            return res.status(500).json({ error: 'Failed to generate token', role, id });
         }
 
         const token = jwt.sign(tokenPayload, SECRET_KEY, {
