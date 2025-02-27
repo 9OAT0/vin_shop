@@ -48,8 +48,44 @@ export default async function handler(req, res) {
             console.error('Error fetching cart details:', error);
             return res.status(500).json({ error: 'Internal Server Error' });
         }
+    } else if (req.method === 'DELETE') {
+        const { userId, productId } = req.query;
+
+        if (!userId || !productId) {
+            return res.status(400).json({ error: 'User ID and Product ID are required.' });
+        }
+
+        try {
+            // ค้นหาตะกร้าของผู้ใช้
+            const cart = await prisma.cart.findUnique({
+                where: { userId: userId },
+                include: {
+                    products: true, // รวมผลิตภัณฑ์ในตะกร้า
+                },
+            });
+
+            if (!cart) {
+                return res.status(404).json({ error: 'Cart not found.' });
+            }
+
+            const cartProduct = cart.products.find(cp => cp.productId === productId);
+
+            if (!cartProduct) {
+                return res.status(404).json({ error: 'Cart product not found.' });
+            }
+
+            // ลบผลิตภัณฑ์จากตะกร้า
+            await prisma.cartProduct.delete({
+                where: { id: cartProduct.id },
+            });
+
+            return res.status(204).end(); // Successfully deleted, return no content
+        } catch (error) {
+            console.error('Error deleting product from cart:', error);
+            return res.status(500).json({ error: 'Internal Server Error' });
+        }
     } else {
-        res.setHeader('Allow', ['GET']);
+        res.setHeader('Allow', ['GET', 'DELETE']);
         return res.status(405).end(`Method ${req.method} Not Allowed`);
     }
 }
