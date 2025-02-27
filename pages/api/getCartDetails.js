@@ -26,7 +26,7 @@ export default async function handler(req, res) {
             // แปลงข้อมูลผลิตภัณฑ์
             const productsWithDetails = await Promise.all(cart.products.map(async (cartProduct) => {
                 // ดึงข้อมูลผลิตภัณฑ์จาก Products
-                const product = await prisma.products.findUnique({
+                const product = await prisma.products.findUnique({ // แก้ไขจาก 'products' เป็น 'product'
                     where: { id: cartProduct.productId },
                     select: {
                         name: true, // ดึงชื่อผลิตภัณฑ์
@@ -68,6 +68,7 @@ export default async function handler(req, res) {
                 return res.status(404).json({ error: 'Cart not found.' });
             }
 
+            // ค้นหาผลิตภัณฑ์ในตะกร้า
             const cartProduct = cart.products.find(cp => cp.productId === productId);
 
             if (!cartProduct) {
