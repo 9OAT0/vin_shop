@@ -30,6 +30,7 @@ export default function CartPage() {
   const [paymentAmount, setPaymentAmount] = useState<number | null>(null); // สำหรับจัดเก็บราคา
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null); // สำหรับจัดเก็บ URL ของ QR Code
   const [paymentData, setPaymentData] = useState<any | null>(null); // สำหรับเก็บข้อมูลการชำระเงิน
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
 
   useEffect(() => {
     const storedUserId = localStorage.getItem("userId");
@@ -122,6 +123,47 @@ export default function CartPage() {
     }
   };
 
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files ? event.target.files[0] : null;
+    setSelectedImage(file);
+  };
+
+  const handleUpload = async () => {
+    if (!userId) {
+        console.error("User ID is not available. Please log in again.");
+        return;
+    }
+
+    if (selectedImage) {
+        const formData = new FormData();
+        formData.append('paymentSlip', selectedImage); // เพิ่มไฟล์ที่เลือก
+        formData.append('userId', userId); // เพิ่ม userId ที่เก็บไว้ใน state
+
+        try {
+            const response = await fetch('/api/CreateOrder', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    Authorization: `Bearer ${token}`, // ส่ง token ถ้ามีการใช้งาน
+                },
+            });
+
+            if (response.ok) {
+                const responseData = await response.json();
+                console.log('Upload successful:', responseData);
+                // คุณสามารถทำการแสดงผลหรืออัปเดตสถานะหลังการอัพโหลดได้ที่นี่
+            } else {
+                const errorData = await response.json();
+                console.error('Error uploading file:', errorData.error);
+            }
+        } catch (error) {
+            console.error('Error during upload:', error.message);
+        }
+    } else {
+        console.error("No file selected");
+    }
+};
+
   return (
     <>
       <div className="min-h-screen bg-white text-black">
@@ -206,20 +248,26 @@ export default function CartPage() {
                       : "กำลังโหลดราคา..."}{" "}
                     {/* แสดงราคา */}
                   </div>
-                  <button
-                    className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
-                    onClick={() =>
-                      (window.location.href = paymentData.paymentLink)
-                    } // นำทางไปยัง payment link
-                  >
-                    ยืนยันการชำระเงิน
-                  </button>
-                  <button
-                    className="mt-2 px-4 py-2 bg-red-500 text-white rounded"
-                    onClick={toggleOverlay} // ปิด Overlay
-                  >
-                    ยกเลิก
-                  </button>
+                  <input 
+                    type="file" 
+                    onChange={handleFileChange} 
+                    className="mt-4" 
+                  />
+                  <div className="flex justify-between">
+                    <button 
+                      onClick={handleUpload} 
+                      className="mt-2 px-4 py-2 bg-blue-500 text-white rounded"
+                    >
+                      Upload Image
+                    </button>
+                    <button
+                        className="mt-2 px-4 py-2 bg-red-500 text-white rounded"
+                        onClick={toggleOverlay} // ปิด Overlay
+                    >
+                        ยกเลิก
+                    </button>
+                  </div>
+                  
                 </div>
               </div>
             )}
