@@ -84,25 +84,24 @@ export default function CartPage() {
     fetchCartItems();
   }, []);
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (productId: string) => {
     if (!userId) {
       console.error("User ID is not available. Please log in again.");
       return;
     }
-  
+
     try {
-      const response = await fetch(`/api/getCartDetails?userId=${userId}&productId=${id}`, {
+      const response = await fetch(`/api/getCartDetails?userId=${userId}&productId=${productId}`, {
         method: "DELETE",
         headers: {
-          Authorization: `Bearer ${token}`, // ส่ง token ถ้ามี
+          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
-  
+
       if (response.ok) {
-        // ลบสินค้าออกจาก State ใน Client หลังจากลบสำเร็จใน API
-        setCartItems((prevItems) => prevItems.filter((item) => item.id !== id));
-        console.log(`Product with ID: ${id} has been removed from the cart`);
+        setCartItems((prevItems) => prevItems.filter((item) => item.productId !== productId));
+        console.log(`Product with ID: ${productId} has been removed from the cart`);
       } else {
         const errorData = await response.json();
         console.error('Error deleting product:', errorData.error);
@@ -227,7 +226,7 @@ export default function CartPage() {
                     <div>{item.productName}</div>
                   </Link>
                   <button
-                    onClick={() => handleDelete(item.id)}
+                    onClick={() => handleDelete(item.productId)} // ใช้ productId แทน id
                     className="bg-red-500 text-white px-4 py-2 rounded transition hover:bg-red-600"
                   >
                     Delete
