@@ -84,9 +84,32 @@ export default function CartPage() {
     fetchCartItems();
   }, []);
 
-  const handleDelete = (id: string) => {
-    setCartItems((prevItems) => prevItems.filter((item) => item.id !== id));
-    console.log(`Product with ID: ${id} has been removed from the cart`);
+  const handleDelete = async (id: string) => {
+    if (!userId) {
+      console.error("User ID is not available. Please log in again.");
+      return;
+    }
+  
+    try {
+      const response = await fetch(`/api/getCartDetails?userId=${userId}&productId=${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`, // ส่ง token ถ้ามี
+          "Content-Type": "application/json",
+        },
+      });
+  
+      if (response.ok) {
+        // ลบสินค้าออกจาก State ใน Client หลังจากลบสำเร็จใน API
+        setCartItems((prevItems) => prevItems.filter((item) => item.id !== id));
+        console.log(`Product with ID: ${id} has been removed from the cart`);
+      } else {
+        const errorData = await response.json();
+        console.error('Error deleting product:', errorData.error);
+      }
+    } catch (error) {
+      console.error("Error during delete:", error.message);
+    }
   };
 
   const toggleOverlay = () => {
