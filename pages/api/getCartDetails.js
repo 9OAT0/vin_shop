@@ -26,7 +26,7 @@ export default async function handler(req, res) {
             // แปลงข้อมูลผลิตภัณฑ์
             const productsWithDetails = await Promise.all(cart.products.map(async (cartProduct) => {
                 // ดึงข้อมูลผลิตภัณฑ์จาก Products
-                const product = await prisma.products.findUnique({ // แก้ไขจาก 'products' เป็น 'product'
+                const product = await prisma.products.findUnique({
                     where: { id: cartProduct.productId },
                     select: {
                         name: true, // ดึงชื่อผลิตภัณฑ์
@@ -43,7 +43,15 @@ export default async function handler(req, res) {
                 };
             }));
 
-            return res.status(200).json({ id: cart.id, userId: cart.userId, products: productsWithDetails });
+            // รวมจำนวนผลิตภัณฑ์ในตะกร้า
+            const totalProducts = cart.products.length;
+
+            return res.status(200).json({
+                id: cart.id,
+                userId: cart.userId,
+                totalProducts, // เพิ่มข้อมูลจำนวนผลิตภัณฑ์ที่นี่
+                products: productsWithDetails
+            });
         } catch (error) {
             console.error('Error fetching cart details:', error);
             return res.status(500).json({ error: 'Internal Server Error' });
