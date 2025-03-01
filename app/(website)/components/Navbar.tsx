@@ -142,6 +142,7 @@ export default function ComponentsNavbar() {
                         </div>
                     )}
                     <a href="/cart"><h1>CART (0)</h1></a>
+                    <div>dfdf</div>
                 </div>
             </div>
         </>
