@@ -35,7 +35,6 @@ const EditProduct: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Add logic to submit the product data to API
     const formData = new FormData();
     formData.append("name", product.name);
     formData.append("size", product.size);
@@ -57,32 +56,67 @@ const EditProduct: React.FC = () => {
   };
 
   return (
-    <div style={{ padding: "20px", maxWidth: "600px", margin: "auto" }}>
+    <div style={{ padding: "20px", maxWidth: "600px", margin: "auto", backgroundColor: "#f9f9f9", borderRadius: "8px", boxShadow: "0 2px 10px rgba(0,0,0,0.1)" }}>
       <h1>Edit Product</h1>
-      <form onSubmit={handleSubmit}>
+      <form
+        onSubmit={handleSubmit}
+        style={{ display: "flex", flexDirection: "column", gap: "15px" }}
+      >
         <label>
           Product Name:
-          <input type="text" name="name" value={product.name} onChange={handleChange} required /><br/>
+          <input type="text" name="name" value={product.name} onChange={handleChange} required style={{ width: "100%", padding: "8px", borderRadius: "4px", border: "1px solid #ccc" }} />
         </label>
         <label>
           Size:
-          <input type="text" name="size" value={product.size} onChange={handleChange} required /><br/>
+          <input type="text" name="size" value={product.size} onChange={handleChange} required style={{ width: "100%", padding: "8px", borderRadius: "4px", border: "1px solid #ccc" }} />
         </label>
         <label>
           Price:
-          <input type="number" name="price" value={product.price} onChange={handleChange} required /><br/>
+          <input type="number" name="price" value={product.price} onChange={handleChange} required style={{ width: "100%", padding: "8px", borderRadius: "4px", border: "1px solid #ccc" }} />
         </label>
         <label>
-          Details:  
-          <textarea name="details" value={product.details} onChange={handleChange} required /><br/>
+          Details:
+          <textarea name="details" value={product.details} onChange={handleChange} required style={{ width: "100%", padding: "8px", borderRadius: "4px", border: "1px solid #ccc" }} />
         </label>
         <label>
-          Product Image:  
-          <input type="file" name="image" onChange={handleImageChange} />
+          Product Image:
+          <input type="file" name="image" onChange={handleImageChange} style={{ marginTop: "10px" }} />
         </label>
-        <div>
-          <button type="submit" style={{ marginRight: "10px", backgroundColor: "#000", color: "#fff", padding: "10px" }}>SAVE</button>
-          <button type="button" onClick={() => alert('Canceled')} style={{ backgroundColor: "#ccc", color: "#000", padding: "10px" }}>Cancel</button>
+        <div style={{ display: "flex", justifyContent: "space-between" }}>
+          <button
+            type="submit"
+            style={{
+              backgroundColor: "#000",
+              color: "#fff",
+              padding: "10px",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+              flex: "1",
+              marginRight: "10px",
+              transition: "background-color 0.3s",
+            }}
+          >
+            SAVE
+          </button>
+          <button
+            type="button"
+            onClick={() => alert("Canceled")}
+            style={{
+              backgroundColor: "#ccc",
+              color: "#000",
+              padding: "10px",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+              flex: "1",
+              transition: "background-color 0.3s",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#bbb")}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#ccc")}
+          >
+            Cancel
+          </button>
         </div>
       </form>
     </div>
