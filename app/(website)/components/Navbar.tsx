@@ -14,6 +14,10 @@ export default function ComponentsNavbar() {
     const [showSearchBar, setShowSearchBar] = useState(false);
     const searchBarRef = useRef<HTMLDivElement>(null);
     const [loading, setLoading] = useState(false);
+    const [totalProducts, setTotalProducts] = useState(0);
+
+    const userId = 'YOUR_USER_ID'; // Replace with actual user ID source.
+
 
     const debounce = (func: (...args: any) => void, wait: number) => {
         let timeout: NodeJS.Timeout;
@@ -24,6 +28,19 @@ export default function ComponentsNavbar() {
             }, wait);
         };
     };
+
+    const fetchCartDetails = async () => {
+        try {
+            const response = await axios.get(`/api/getCartDetails?userId=${userId}`);
+            setTotalProducts(response.data.totalProducts);
+        } catch (error) {
+            console.error("Error fetching cart details:", error);
+        }
+    };
+
+    useEffect(() => {
+        fetchCartDetails();
+    }, [userId]);
     
 
     const updateSuggestions = async (term: string) => {
@@ -141,8 +158,7 @@ export default function ComponentsNavbar() {
                             )}
                         </div>
                     )}
-                    <a href="/cart"><h1>CART (0)</h1></a>
-                    <h1>rgdrgt</h1>
+                    <a href="/cart"><h1>CART ({totalProducts})</h1></a> {/* Display total products */}
                 </div>
             </div>
         </>
