@@ -2,6 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import Link from "next/link";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
 // Define types for product and order
 interface Product {
@@ -18,8 +20,8 @@ interface Order {
 }
 
 interface Report {
-  dailySummary: { date: string; totalItems: number; products: any }[];
-  statusSummary: { status: string; count: number; products: any }[];
+  dailySummary: { date: string; totalItems: number }[];
+  statusSummary: { status: string; count: number }[];
 }
 
 const Dashboard: React.FC = () => {
@@ -43,13 +45,11 @@ const Dashboard: React.FC = () => {
   // Fetch all orders
   const fetchOrders = async () => {
     try {
-      const token = localStorage.getItem("token"); // Retrieve token
+      const token = localStorage.getItem("token");
       const response = await axios.get('/api/getOrderAdmin', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
-      setOrders(response.data); // Store orders
+      setOrders(response.data);
     } catch (err) {
       console.error('Error fetching orders:', err);
     }
@@ -60,17 +60,11 @@ const Dashboard: React.FC = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.get<Report>("/api/reportData", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
       setReport(response.data);
     } catch (err) {
-      if (err.response?.status === 401) {
-        console.error("Unauthorized: Please log in again.");
-      } else {
-        console.error("Error fetching report:", err);
-      }
+      console.error("Error fetching report:", err);
     }
   };
 
@@ -81,60 +75,117 @@ const Dashboard: React.FC = () => {
     fetchReport();
   }, []);
 
+  // Colors for Pie Chart
+  const colors = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
+
   return (
-    <div>
-      <h1>Dashboard</h1>
+    <div className="min-h-screen bg-gray-100 p-6 text-black">
 
-      <section>
-        <h2>Product Management</h2>
-        <ul>
-          {products.map((product) => (
-            <li key={product.id}>
-              {product.name} - ${product.price}
-              {/* Add buttons/actions for editing or deleting products */}
-            </li>
-          ))}
-        </ul>
+      {/* ✅ TabBar Navigation */}
+      <div className="bg-white p-4 rounded-lg shadow-md mb-6 flex justify-between">
+        <Link href="/admin">
+          <button className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+            🛠️ Product Edit
+          </button>
+        </Link>
+        <Link href="/ProductUpload">
+          <button className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600">
+            🆕 เพิ่มสินค้า
+          </button>
+        </Link>
+      </div>
+
+      <h1 className="text-3xl font-bold text-center mb-6">จัดการระบบ</h1>
+
+      {/* Product Management */}
+      <section className="bg-white p-6 rounded-lg shadow-md mb-6">
+        <h2 className="text-xl font-semibold mb-4">สินค้า</h2>
+        <table className="w-full border-collapse border border-gray-300">
+          <thead>
+            <tr className="bg-gray-200">
+              <th className="border border-gray-300 p-2">ชื่อสินค้า</th>
+              <th className="border border-gray-300 p-2">ราคา</th>
+            </tr>
+          </thead>
+          <tbody>
+            {products.map((product) => (
+              <tr key={product.id} className="border border-gray-300">
+                <td className="border border-gray-300 p-2">{product.name}</td>
+                <td className="border border-gray-300 p-2">฿{product.price}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </section>
 
-      <section>
-        <h2>Order Management</h2>
-        <ul>
-          {orders.map((order) => (
-            <li key={order.id}>
-              Order ID: {order.id}, Status: {order.status}, Created At: {new Date(order.createdAt).toLocaleString()}
-              {/* Add buttons/actions for updating orders */}
-            </li>
-          ))}
-        </ul>
+      {/* Order Management */}
+      <section className="bg-white p-6 rounded-lg shadow-md mb-6">
+        <h2 className="text-xl font-semibold mb-4">คำสั่งซื้อ</h2>
+        <table className="w-full border-collapse border border-gray-300">
+          <thead>
+            <tr className="bg-gray-200">
+              <th className="border border-gray-300 p-2">รหัสคำสั่งซื้อ</th>
+              <th className="border border-gray-300 p-2">สถานะ</th>
+              <th className="border border-gray-300 p-2">วันที่สั่งซื้อ</th>
+            </tr>
+          </thead>
+          <tbody>
+            {orders.map((order) => (
+              <tr key={order.id} className="border border-gray-300">
+                <td className="border border-gray-300 p-2">{order.id}</td>
+                <td className="border border-gray-300 p-2">{order.status}</td>
+                <td className="border border-gray-300 p-2">
+                  {new Date(order.createdAt).toLocaleString()}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </section>
 
-      <section>
-        <h2>Monthly Report</h2>
-        <h3>Daily Summary</h3>
-        <ul>
-          {report.dailySummary.map((summary) => (
-            <li key={summary.date}>
-              Date: {summary.date}, Total Items: {summary.totalItems}
-            </li>
-          ))}
-        </ul>
+      {/* Report Section */}
+      <section className="bg-white p-6 rounded-lg shadow-md">
+        <h2 className="text-xl font-semibold mb-4">รายงาน</h2>
 
-        <h3>Status Summary</h3>
-        <ul>
-          {report.statusSummary.map((status) => (
-            <li key={status.status}>
-              Status: {status.status}, Count: {status.count}
-              <ul>
-                {status.products.map((product: any) => (
-                  <li key={product.productId}>
-                    {product.name} - Quantity: {product.quantity}
-                  </li>
+        {/* Daily Summary Graph */}
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold mb-2">คำสั่งซื้อรายวัน</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={report.dailySummary}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="totalItems" fill="#8884d8" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Status Summary Graph */}
+        <div>
+          <h3 className="text-lg font-semibold mb-2">สรุปสถานะคำสั่งซื้อ</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie
+                data={report.statusSummary}
+                dataKey="count"
+                nameKey="status"
+                cx="50%"
+                cy="50%"
+                outerRadius={100}
+                fill="#82ca9d"
+                label
+              >
+                {report.statusSummary.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
                 ))}
-              </ul>
-            </li>
-          ))}
-        </ul>
+              </Pie>
+              <Tooltip />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
       </section>
     </div>
   );
