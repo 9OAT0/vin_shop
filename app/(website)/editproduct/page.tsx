@@ -4,7 +4,6 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useParams, useRouter } from "next/navigation";
 
-const API_BASE_URL = "http://localhost:3001"; // ✅ ใช้ API product_fix ที่ port 3001
 
 interface Product {
   id: string;
@@ -47,7 +46,7 @@ export default function EditProductPage() {
     const fetchProduct = async () => {
       try {
         console.log("Fetching product with ID:", productId);
-        const response = await axios.get<Product>(`${API_BASE_URL}/api/product_fix/${productId}`, {
+        const response = await axios.get<Product>(`/api/product_fix/${productId}`, {
           headers: {
             Authorization: `Bearer ${authToken}`,
           },
