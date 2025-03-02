@@ -2,7 +2,9 @@
 
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useRouter } from "next/navigation";
+
+const API_BASE_URL = "http://localhost:3001"; // ✅ ใช้ API product_fix ที่ port 3001
 
 interface Product {
   id: string;
@@ -13,8 +15,13 @@ interface Product {
   pictures: File | null;
 }
 
-const EditProduct: React.FC = () => {
-  const { id } = useParams(); // รับ ID จาก URL
+export default function EditProductPage() {
+  const params = useParams();
+  const router = useRouter();
+
+  const [productId, setProductId] = useState<string | null>(null);
+  const [authToken, setAuthToken] = useState<string | null>(null);
+  const [isClient, setIsClient] = useState(false);
   const [product, setProduct] = useState<Product>({
     id: "",
     name: "",
@@ -24,20 +31,35 @@ const EditProduct: React.FC = () => {
     pictures: null,
   });
 
-  const navigate = useNavigate();
-
+  // ✅ ดึง `authToken` และ `productId` หลังจาก Component โหลดแล้ว
   useEffect(() => {
+    setIsClient(true);
+    if (typeof window !== "undefined") {
+      setAuthToken(localStorage.getItem("token"));
+      setProductId(params?.id as string);
+    }
+  }, [params?.id]);
+
+  // ✅ ดึงข้อมูลสินค้า หลังจากที่ productId และ authToken โหลดเสร็จแล้ว
+  useEffect(() => {
+    if (!productId || !authToken || !isClient) return;
+
     const fetchProduct = async () => {
       try {
-        const response = await axios.get<Product>(`/api/product_fix/${id}`); // ดึงข้อมูลผลิตภัณฑ์
-        setProduct(response.data); // อัปเดตสถานะด้วยข้อมูลที่ได้รับ
+        console.log("Fetching product with ID:", productId);
+        const response = await axios.get<Product>(`${API_BASE_URL}/api/product_fix/${productId}`, {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        });
+        setProduct(response.data);
       } catch (error) {
-        console.error('Error fetching product:', error);
+        console.error("❌ Error fetching product:", error);
       }
     };
 
     fetchProduct();
-  }, [id]);
+  }, [productId, authToken, isClient]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -50,9 +72,21 @@ const EditProduct: React.FC = () => {
     }
   };
 
+  // ✅ ฟังก์ชันส่งข้อมูลไปยัง API
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!productId) {
+      alert("❌ Product ID is missing!");
+      return;
+    }
+    if (!authToken) {
+      alert("❌ Authorization token is missing!");
+      return;
+    }
+
     const formData = new FormData();
+    formData.append("id", productId);
     formData.append("name", product.name);
     formData.append("size", product.size);
     formData.append("price", product.price.toString());
@@ -60,85 +94,58 @@ const EditProduct: React.FC = () => {
     if (product.pictures) {
       formData.append("image", product.pictures);
     }
+
     try {
-      await axios.put(`/api/product/${product.id}`, formData, {
+      const response = await axios.put(`${API_BASE_URL}/api/product_fix/${productId}`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${authToken}`,
         },
       });
-      alert("Product updated successfully!");
-      navigate("/"); // นำทางกลับไปยังหน้าหลักหลังจากอัปเดตเสร็จ
+      console.log("✅ Product updated:", response.data);
+      alert("✅ Product updated successfully!");
     } catch (error) {
-      console.error("Error updating product:", error);
+      console.error("❌ Error updating product:", error);
+      alert("❌ Failed to update product!");
     }
+
+    router.push("/");
   };
 
+  // ✅ แสดงผลเฉพาะตอนที่ Component โหลดเสร็จแล้ว
+  if (!isClient || !productId) {
+    return <p>Loading...</p>;
+  }
+
   return (
-    <div style={{ padding: "20px", maxWidth: "600px", margin: "auto", backgroundColor: "#f9f9f9", borderRadius: "8px", boxShadow: "0 2px 10px rgba(0,0,0,0.1)" }}>
+    <div>
       <h1>Edit Product</h1>
-      <form
-        onSubmit={handleSubmit}
-        style={{ display: "flex", flexDirection: "column", gap: "15px" }}
-      >
+      <form onSubmit={handleSubmit}>
         <label>
           Product Name:
-          <input type="text" name="name" value={product.name} onChange={handleChange} required style={{ width: "100%", padding: "8px", borderRadius: "4px", border: "1px solid #ccc" }} />
+          <input type="text" name="name" value={product.name} onChange={handleChange} required />
         </label>
         <label>
           Size:
-          <input type="text" name="size" value={product.size} onChange={handleChange} required style={{ width: "100%", padding: "8px", borderRadius: "4px", border: "1px solid #ccc" }} />
+          <input type="text" name="size" value={product.size} onChange={handleChange} required />
         </label>
         <label>
           Price:
-          <input type="number" name="price" value={product.price} onChange={handleChange} required style={{ width: "100%", padding: "8px", borderRadius: "4px", border: "1px solid #ccc" }} />
+          <input type="number" name="price" value={product.price} onChange={handleChange} required />
         </label>
         <label>
           Details:
-          <textarea name="details" value={product.details} onChange={handleChange} required style={{ width: "100%", padding: "8px", borderRadius: '4px', border: "1px solid #ccc" }} />
+          <textarea name="details" value={product.details} onChange={handleChange} required />
         </label>
         <label>
           Product Image:
-          <input type="file" name="image" onChange={handleImageChange} style={{ marginTop: "10px" }} />
+          <input type="file" name="image" onChange={handleImageChange} />
         </label>
-        <div style={{ display: "flex", justifyContent: "space-between" }}>
-          <button
-            type="submit"
-            style={{
-              backgroundColor: "#000",
-              color: "#fff",
-              padding: "10px",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-              flex: "1",
-              marginRight: "10px",
-              transition: "background-color 0.3s",
-            }}
-          >
-            SAVE
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate("/")} // นำทางกลับเมื่อคลิก Cancel
-            style={{
-              backgroundColor: "#ccc",
-              color: "#000",
-              padding: "10px",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-              flex: "1",
-              transition: "background-color 0.3s",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#bbb")}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#ccc")}
-          >
-            Cancel
-          </button>
+        <div>
+          <button type="submit">SAVE</button>
+          <button type="button" onClick={() => router.push("/")}>Cancel</button>
         </div>
       </form>
     </div>
   );
-};
-
-export default EditProduct;
+}
