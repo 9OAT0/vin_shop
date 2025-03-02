@@ -13,7 +13,7 @@ export default function ForgotpasswordPage() {
         event.preventDefault(); // หยุดการรีเฟรชหน้า
 
         try {
-            const response = await fetch('/api/resetPassword', { // URL นี้จะชี้ไปที่ API ที่ใช้ส่งลิงค์รีเซ็ตรหัสผ่าน
+            const response = await fetch('/api/requrestResetPassword', { // URL นี้จะชี้ไปที่ API ที่ใช้ส่งลิงค์รีเซ็ตรหัสผ่าน
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -43,9 +43,8 @@ export default function ForgotpasswordPage() {
 
     return (
         <>
-            
             <div className="min-h-screen bg-white text-black flex flex-col gap-16">
-            <Navbar />
+                <Navbar />
                 <div className="flex flex-col gap-4 p-[37px]">
                     <h1 className='text-3xl font-bold text-center pr-[0px]'>RESET YOUR PASSWORD</h1>
                     <h1 className='text-xl font-bold text-center pr-[0px]'>We will send you an email to reset your password.</h1>
@@ -72,10 +71,10 @@ export default function ForgotpasswordPage() {
                         {successMessage && <p className="text-green-600">{successMessage}</p>} {/* แสดงข้อความสำเร็จ */}
                     </form>
                 </div>
-            <div>
-                <Footer />
-                <img src="/Rectangle 276.png" alt="" className="w-full h-[40px]"/>
-            </div>
+                <div>
+                    <Footer />
+                    <img src="/Rectangle 276.png" alt="" className="w-full h-[40px]" />
+                </div>
             </div>
         </>
     );

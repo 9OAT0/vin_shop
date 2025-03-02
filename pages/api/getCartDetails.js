@@ -43,7 +43,15 @@ export default async function handler(req, res) {
                 };
             }));
 
-            return res.status(200).json({ id: cart.id, userId: cart.userId, products: productsWithDetails });
+            // รวมจำนวนผลิตภัณฑ์ในตะกร้า
+            const totalProducts = cart.products.length;
+
+            return res.status(200).json({
+                id: cart.id,
+                userId: cart.userId,
+                totalProducts, // เพิ่มข้อมูลจำนวนผลิตภัณฑ์ที่นี่
+                products: productsWithDetails
+            });
         } catch (error) {
             console.error('Error fetching cart details:', error);
             return res.status(500).json({ error: 'Internal Server Error' });
@@ -68,6 +76,7 @@ export default async function handler(req, res) {
                 return res.status(404).json({ error: 'Cart not found.' });
             }
 
+            // ค้นหาผลิตภัณฑ์ในตะกร้า
             const cartProduct = cart.products.find(cp => cp.productId === productId);
 
             if (!cartProduct) {

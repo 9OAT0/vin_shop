@@ -1,27 +1,82 @@
 import { useState, useEffect, useRef } from "react";
-import axios from "axios"; // นำเข้า axios
+import axios from "axios";
+
+interface Product {
+    pictures: any;
+    imageUrl: string | undefined;
+    id: number;
+    name: string;
+}
 
 export default function ComponentsNavbar() {
     const [searchTerm, setSearchTerm] = useState('');
+    const [suggestions, setSuggestions] = useState<Product[]>([]);
     const [showSearchBar, setShowSearchBar] = useState(false);
-    const searchBarRef = useRef<HTMLDivElement>(null); 
+    const searchBarRef = useRef<HTMLDivElement>(null);
+    const [loading, setLoading] = useState(false);
 
-    const handleSearch = async () => {
-        console.log("Searching for:", searchTerm);
-        try {
-            const response = await axios.get(`/api/products?name=${encodeURIComponent(searchTerm)}`);
-            console.log("Search Results:", response.data);
-            // จัดการผลลัพธ์การค้นหา เช่น นำทางไปยังหน้าแสดงผลลัพธ์ หรือแสดงผลลัพธ์
-            // ตัวอย่างเช่น:
-            // window.location.href = `/results?query=${encodeURIComponent(searchTerm)}`;
-        } catch (error) {
-            console.error("Error fetching products:", error);
-            // แสดงข้อความแสดงข้อผิดพลาดถ้าต้องการ
+    const debounce = (func: (...args: any) => void, wait: number) => {
+        let timeout: NodeJS.Timeout;
+        return (...args: any) => {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                func(...args);
+            }, wait);
+        };
+    };
+    
+
+    const updateSuggestions = async (term: string) => {
+        if (!term) {
+            setSuggestions([]);
+            return;
         }
+    
+        const token = localStorage.getItem('token');
+        console.log("Authorization Token:", token);
+    
+        if (!token) {
+            console.error("No token found. Please log in.");
+            setSuggestions([]);
+            return;
+        }
+    
+        setLoading(true);
+        try {
+            const response = await axios.get('/api/search', {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+                params: {
+                    name: term,
+                },
+            });
+            console.log("API Response:", response.data); // Log API response for debugging
+            setSuggestions(response.data);
+        } catch (error) {
+            if (axios.isAxiosError(error)) {
+                console.error("Axios error response:", error.response); // Log detailed error response
+            } else {
+                console.error("Error fetching suggestions:", error);
+            }
+            setSuggestions([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const debouncedUpdateSuggestions = debounce(updateSuggestions, 300);
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const term = e.target.value;
+        setSearchTerm(term);
+        debouncedUpdateSuggestions(term);
     };
 
     const closeSearchBar = () => {
         setShowSearchBar(false);
+        setSearchTerm('');
+        setSuggestions([]);
     };
 
     useEffect(() => {
@@ -36,6 +91,7 @@ export default function ComponentsNavbar() {
             document.removeEventListener("mousedown", handleClickOutside);
         };
     }, []);
+    
 
     return (
         <>
@@ -45,23 +101,48 @@ export default function ComponentsNavbar() {
                     <a href="/shopall"><h1>SHOP ALL</h1></a>
                 </div>
                 <div className="flex items-center gap-4 text-black"> 
-                <a href="/login"><h1>LOGIN</h1></a>
+                    <a href="/login"><h1>LOGIN</h1></a>
                     <button onClick={() => setShowSearchBar(!showSearchBar)} className="h-8">
                         {showSearchBar ? "" : "SEARCH"}
                     </button>
                     {showSearchBar && (
-                        <div className="flex gap-2" ref={searchBarRef}>
+                        <div className="relative flex gap-2" ref={searchBarRef}>
                             <input 
                                 type="text" 
                                 placeholder="Search..." 
                                 value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
+                                onChange={handleChange}
                                 className="border border-gray-300 rounded pl-2 h-8" 
                             />
-                            <button onClick={handleSearch} className="h-8">SUBMIT</button>
+                            {loading && <div className="loader">Loading...</div>}  {/* Optional loader */}
+                            {suggestions.length > 0 && (
+                                <div className="absolute z-4 mt-9 w-full bg-white border border-black rounded-md shadow-lg max-h-64 overflow-y-auto">
+                                    {suggestions.map((product) => (
+                                        <div 
+                                            key={product.id}
+                                            className="p-2 hover:bg-gray-200 cursor-pointer text-black"
+                                            onClick={() => {
+                                                setSearchTerm(product.name);
+                                                setSuggestions([]); // Clear suggestions when an item is selected
+                                            }}
+                                        >
+                                            <div className="flex items-center gap-4">
+                                                <img 
+                                                src={product.pictures[0] || '/default.jpg'} 
+                                                alt={product.name} 
+                                                className="w-8 h-8 mr-2 rounded" 
+                                                />
+                                                {product.name}
+                                            </div>
+                                            
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     )}
                     <a href="/cart"><h1>CART (0)</h1></a>
+                    <h1>rgdrgt</h1>
                 </div>
             </div>
         </>
