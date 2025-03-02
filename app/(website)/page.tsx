@@ -62,7 +62,7 @@ export default function Home() {
         <div className="bg-white w-full h-[100px] flex items-center pl-[20px]">
           <h1 className="text-black text-[20px] font-bold">OUR RECOMMEND PRODUCT</h1>
         </div>
-        <div className="flex flex-wrap">
+        <div className="flex flex-wrap gap-2">
                     {products.map((product) => (
                         <Link key={product.id} href={`/buy?id=${product.id}`}>
                         <ProductCard

@@ -51,6 +51,7 @@ export default async function handler(req, res) {
         const tokenPayload = { id: user.id, role: user.role };
         const user_id = user.id
         const user_role = user.role
+        const user_name = user.name
 
         console.log(tokenPayload)
         console.log(user)
@@ -64,7 +65,7 @@ export default async function handler(req, res) {
             expiresIn: '12h',
         });
 
-        res.status(200).json({ message: 'Login successful', token, user_id , user_role });
+        res.status(200).json({ message: 'Login successful', token, user_id , user_role, user_name });
     } catch (error) {
         console.error('Error:', error.message || error);
         res.status(500).json({ error: 'Login failed', details: error.message || error });
