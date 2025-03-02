@@ -1,35 +1,29 @@
-import { PrismaClient } from '@prisma/client';
-import { checkUserRole } from './auth'; // Import the role-checking middleware
+import { PrismaClient } from "@prisma/client";
+import { authenticateToken } from "./auth";
 
 const prisma = new PrismaClient();
 
 export default async function handler(req, res) {
-    // Check if the user is an admin
-    await checkUserRole('ADMIN')(req, res, async () => {
-        if (req.method === 'GET') {
-            try {
-                // Fetch all orders along with product data
-                const orders = await prisma.order.findMany({
-                    include: {
-                        product: true, // Include product information in each order
-                    },
-                });
+  await authenticateToken(req, res, async () => {
+    if (req.method === "GET") {
+      try {
+        console.log("📌 Fetching orders from database...");
+        
+        const orders = await prisma.order.findMany();
 
-                // Check if there are no orders
-                if (!orders || orders.length === 0) {
-                    return res.status(404).json({ message: 'No orders found for admin.' });
-                }
-
-                console.log("All Orders Retrieved:", orders); // Log for debugging
-
-                return res.status(200).json(orders); // Return the list of orders
-            } catch (error) {
-                console.error('Error fetching orders for admin:', error); // Log error
-                return res.status(500).json({ error: 'Error fetching orders', details: error.message });
-            }
-        } else {
-            res.setHeader('Allow', ['GET']); // Specify allowed methods
-            return res.status(405).end(`Method ${req.method} Not Allowed`); // Handle non-GET requests
+        if (!orders || orders.length === 0) {
+          console.warn("⚠️ No orders found.");
+          return res.status(404).json({ error: "No orders found" });
         }
-    });
+
+        console.log("✅ Orders Retrieved:", orders);
+        res.status(200).json(orders);
+      } catch (error) {
+        console.error("❌ Error fetching orders:", error.message);
+        res.status(500).json({ error: "Server Error", details: error.message });
+      }
+    } else {
+      res.status(405).json({ error: "Method Not Allowed" });
+    }
+  });
 }
