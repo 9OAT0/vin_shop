@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import Link from "next/link";
-import { useRouter } from 'next/router';
 
 // ✅ กำหนด Type สำหรับข้อมูล Order
 interface Product {
@@ -18,7 +17,8 @@ interface Order {
     username: string;
     date: string;
     status: string;
-    products: Product[];
+    trackingId: string;
+    product: Product;
 }
 
 export default function OrderPage() {
@@ -91,12 +91,19 @@ export default function OrderPage() {
                         {orders.map((order: Order) => (
                             <div key={order.id} className="flex flex-col gap-6">
                                 <div className="flex justify-between border-b pb-4">
-                                    <div className="text-lg font-semibold" >สินค้า : <Link href={`/buy/?id=${order.product.id}`} className="text-blue-600 hover:underline ml-2">
-                                        {order.product.name}
-                                    </Link></div>
+                                    {/* ✅ ทำให้ชื่อสินค้าเป็นลิงก์ */}
+                                    <div className="text-lg font-semibold">
+                                        สินค้า : 
+                                        <Link href={`/buy/?id=${order.product.id}`} className="text-blue-600 hover:underline ml-2">
+                                            {order.product.name}
+                                        </Link>
+                                    </div>
+
+                                    {/* ✅ เพิ่มราคาไว้หลังสถานะการจัดส่ง */}
                                     <div className={`font-semibold flex gap-7 ${order.status === "จัดส่งสำเร็จ" ? "text-green-600" : "text-orange-600"}`}>
                                         <h1 className="text-black text-left">{order.trackingId}</h1>
                                         {order.status}
+                                        <span className="text-black font-normal">{order.product.price} ฿</span> {/* ✅ แสดงราคา */}
                                     </div>
                                 </div>
                             </div>
