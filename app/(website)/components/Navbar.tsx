@@ -17,14 +17,20 @@ export default function ComponentsNavbar() {
     const [totalProducts, setTotalProducts] = useState(0);
     const [userName, setUserName] = useState<string | null>(null);
     const [userId, setUserId] = useState<string | null>(null); 
+    const [role, setRole] = useState<string | null>(null);
 
     // ดึงค่า localStorage บนไคลเอนต์
     useEffect(() => {
         if (typeof window !== "undefined") {
-            setUserId(localStorage.getItem("username"));
-            setUserName(localStorage.getItem("Username"));
+            const storedRole = localStorage.getItem("role")?.toLowerCase() ?? null; // ✅ ใช้ ?? null แก้ปัญหา type
+            console.log("🔍 Role from localStorage (Navbar):", storedRole); // ✅ Debug
+
+            setUserId(localStorage.getItem("username") ?? null);
+            setUserName(localStorage.getItem("Username") ?? null);
+            setRole(storedRole);
         }
     }, []);
+    
 
     
 
@@ -181,7 +187,12 @@ export default function ComponentsNavbar() {
                     </div>
                 )}
                 <a href="/cart"><h1 className="hover:border-b-2 hover:border-black">CART ({totalProducts})</h1></a>
-                <a href="/order" className="hover:border-b-2 hover:border-black">YOUR ORDER</a>
+                {/* ✅ เปลี่ยน `Your Order` เป็น `Dashboard` ถ้า role เป็น `admin` */}
+                {role === "admin" ? (
+                    <a href="/dashBord" className="hover:border-b-2 hover:border-black">DASHBOARD</a>
+                ) : (
+                    <a href="/order" className="hover:border-b-2 hover:border-black">YOUR ORDER</a>
+                )}
                 <button className="hover:border-b-2 hover:border-black" onClick={handleLogout}>
                     LOGOUT
                 </button>

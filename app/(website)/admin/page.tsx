@@ -17,7 +17,7 @@ const ProductManagement: React.FC = () => {
   
   const fetchProducts = async () => {
     try {
-      const response = await axios.get<Product[]>('/api/ProductGet'); // ระบุประเภทที่ถูกต้อง
+      const response = await axios.get<Product[]>('/api/productGet'); // ระบุประเภทที่ถูกต้อง
       setProducts(response.data);
     } catch (error) {
       console.error('Error fetching products:', error);
