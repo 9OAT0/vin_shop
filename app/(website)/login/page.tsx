@@ -40,6 +40,7 @@ export default function LoginPage() {
         localStorage.setItem('token', data.token); // เก็บ token ใน localStorage
         localStorage.setItem('userId', data.user_id); // เก็บ userId ถ้าต้องการ
         localStorage.setItem('role', data.user_role)
+        localStorage.setItem('Username', data.user_name)
         router.push('/');
     } catch (err: any) {
       console.error(err.message);
