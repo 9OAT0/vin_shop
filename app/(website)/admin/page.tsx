@@ -20,6 +20,7 @@ const ProductManagement: React.FC = () => {
   // ✅ ดึงข้อมูลสินค้าจาก API
   const fetchProducts = async () => {
     try {
+
       const response = await axios.get<Product[]>("/api/productGet");
       setProducts(response.data);
     } catch (error) {
