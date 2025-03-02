@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { useParams, useNavigate } from "react-router-dom";
 
 interface Product {
   id: string;
@@ -9,18 +10,34 @@ interface Product {
   size: string;
   price: number;
   details: string;
-  image: File | null;
+  pictures: File | null;
 }
 
 const EditProduct: React.FC = () => {
+  const { id } = useParams(); // รับ ID จาก URL
   const [product, setProduct] = useState<Product>({
     id: "",
     name: "",
     size: "",
     price: 0,
     details: "",
-    image: null,
+    pictures: null,
   });
+
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        const response = await axios.get<Product>(`/api/product_fix/${id}`); // ดึงข้อมูลผลิตภัณฑ์
+        setProduct(response.data); // อัปเดตสถานะด้วยข้อมูลที่ได้รับ
+      } catch (error) {
+        console.error('Error fetching product:', error);
+      }
+    };
+
+    fetchProduct();
+  }, [id]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -29,7 +46,7 @@ const EditProduct: React.FC = () => {
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      setProduct({ ...product, image: e.target.files[0] });
+      setProduct({ ...product, pictures: e.target.files[0] });
     }
   };
 
@@ -40,8 +57,8 @@ const EditProduct: React.FC = () => {
     formData.append("size", product.size);
     formData.append("price", product.price.toString());
     formData.append("details", product.details);
-    if (product.image) {
-      formData.append("image", product.image);
+    if (product.pictures) {
+      formData.append("image", product.pictures);
     }
     try {
       await axios.put(`/api/product/${product.id}`, formData, {
@@ -50,6 +67,7 @@ const EditProduct: React.FC = () => {
         },
       });
       alert("Product updated successfully!");
+      navigate("/"); // นำทางกลับไปยังหน้าหลักหลังจากอัปเดตเสร็จ
     } catch (error) {
       console.error("Error updating product:", error);
     }
@@ -76,7 +94,7 @@ const EditProduct: React.FC = () => {
         </label>
         <label>
           Details:
-          <textarea name="details" value={product.details} onChange={handleChange} required style={{ width: "100%", padding: "8px", borderRadius: "4px", border: "1px solid #ccc" }} />
+          <textarea name="details" value={product.details} onChange={handleChange} required style={{ width: "100%", padding: "8px", borderRadius: '4px', border: "1px solid #ccc" }} />
         </label>
         <label>
           Product Image:
@@ -101,7 +119,7 @@ const EditProduct: React.FC = () => {
           </button>
           <button
             type="button"
-            onClick={() => alert("Canceled")}
+            onClick={() => navigate("/")} // นำทางกลับเมื่อคลิก Cancel
             style={{
               backgroundColor: "#ccc",
               color: "#000",

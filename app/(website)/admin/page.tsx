@@ -8,7 +8,7 @@ interface Product {
   name: string;
   size: string;
   price: string;
-  image: string;
+  pictures: string;
   selected?: boolean; 
 }
 
@@ -17,7 +17,7 @@ const ProductManagement: React.FC = () => {
   
   const fetchProducts = async () => {
     try {
-      const response = await axios.get<Product[]>('/api/products'); // ระบุประเภทที่ถูกต้อง
+      const response = await axios.get<Product[]>('/api/ProductGet'); // ระบุประเภทที่ถูกต้อง
       setProducts(response.data);
     } catch (error) {
       console.error('Error fetching products:', error);
@@ -98,7 +98,7 @@ const ProductManagement: React.FC = () => {
                 />
               </td>
               <td style={{ border: "1px solid #ddd", padding: "8px" }}>
-                <img src={product.image} alt={product.name} style={{ width: "50px", height: "50px" }} />
+                <img src={product.pictures[0]} alt={product.name} style={{ width: "50px", height: "50px" }} />
               </td>
               <td style={{ border: "1px solid #ddd", padding: "8px" }}>{product.name}</td>
               <td style={{ border: "1px solid #ddd", padding: "8px" }}>{product.size}</td>
