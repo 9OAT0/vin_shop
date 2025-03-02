@@ -139,8 +139,9 @@ export default function ComponentsNavbar() {
     return (
         <div className="w-full h-[40px] bg-white flex justify-between items-center px-5 border-black border-[1px]">
             <a href="/"><div className="text-black"><h1>VIN_SHOP</h1></div></a>
-            <div className="text-black flex justify-center items-center gap-20 pl-32">
+            <div className="text-black flex justify-center items-center gap-10 pl-[350px]">
                 <a href="/shopall"><h1 className="hover:border-b-2 hover:border-black">SHOP ALL</h1></a>
+                <a href="/adr"><h1 className="hover:border-b-2 hover:border-black">Ad Your Adress</h1></a>
             </div>
             <div className="flex items-center gap-4 text-black"> 
                 {userName ? (
