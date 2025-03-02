@@ -140,7 +140,7 @@ const Dashboard: React.FC = () => {
   
     try {
       const token = localStorage.getItem("token");
-      const apiUrl = `/api/orderFix/${editOrder.id}`;
+      const apiUrl = `http://localhost:3001/api/orderFix/${editOrder.id}`;
   
       console.log("📡 Sending PUT request to:", apiUrl);
       console.log("📝 Data Sent:", { status: newStatus, trackingId: newTrackingId });

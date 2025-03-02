@@ -43,6 +43,7 @@ export default async function handler(req, res) {
         email: user.email,
         location: user.location,
         name: user.name,
+        phoneNumber: user.phoneNumber,
         // ไม่ส่งรหัสผ่าน
       });
     } catch (error) {
@@ -55,13 +56,14 @@ export default async function handler(req, res) {
       if (!userData) return;
 
       const userId = userData.id; // ใช้ userId ที่ถอดรหัสได้จาก Token
-      const { name, email, location, password } = req.body; // รับข้อมูลที่ต้องการอัปเดต
+      const { name, email, location, password, phoneNumber } = req.body; // รับข้อมูลที่ต้องการอัปเดต
 
       // Data to Update
       const updatedData = {
         name,
         email,
         location,
+        phoneNumber,
       };
 
       // ถ้ามีการเปลี่ยนรหัสผ่านก็เข้ารหัสรหัสผ่านใหม่
