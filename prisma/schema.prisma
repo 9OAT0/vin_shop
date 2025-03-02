@@ -13,6 +13,9 @@ model Users {
   location  String
   name      String
   password  String
+
+  phoneNumber String?
+
   role      String  @default("USER")  // Added role field with a default value of "USER"
   cart      Cart?   @relation("UserCart")
   cartId    String? // Foreign key for Cart

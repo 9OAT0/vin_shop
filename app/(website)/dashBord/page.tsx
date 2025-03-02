@@ -78,6 +78,69 @@ const Dashboard: React.FC = () => {
   // Colors for Pie Chart
   const colors = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
+  const openEditModal = (order: Order) => {
+    setEditOrder(order);
+    setNewStatus(order.status);
+    setNewTrackingId(order.trackingId || "");
+  };
+
+  // ปิด Modal
+  const closeEditModal = () => {
+    setEditOrder(null);
+    setNewStatus("");
+    setNewTrackingId("");
+  };
+
+  // ฟังก์ชันอัปเดตคำสั่งซื้อผ่าน API
+  const handleUpdateOrder = async () => {
+    if (!editOrder || !editOrder.id) {
+      alert("❌ กรุณาเลือกคำสั่งซื้อก่อนอัปเดต");
+      return;
+    }
+  
+    setLoading(true);
+  
+    try {
+      const token = localStorage.getItem("token");
+      const apiUrl = `http://localhost:3001/api/orderFix/${editOrder.id}`;
+  
+      console.log("📡 Sending PUT request to:", apiUrl);
+      console.log("📝 Data Sent:", { status: newStatus, trackingId: newTrackingId });
+  
+      const response = await axios.put(
+        apiUrl,
+        {
+          status: newStatus.toUpperCase(), // ✅ Ensure status is in uppercase
+          trackingId: newTrackingId || null,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+  
+      console.log("✅ Order updated successfully:", response.data);
+      alert("✅ อัปเดตคำสั่งซื้อสำเร็จ!");
+      setEditOrder(null);
+      fetchOrders();
+    } catch (error) {
+      console.error("❌ Error updating order:", error);
+      console.error("🔎 Full error details:", error.response?.status, error.response?.data);
+  
+      if (error.response?.status === 400) {
+        alert(`🚨 Update failed: ${error.response?.data?.error}`);
+      } else if (error.response?.status === 500) {
+        alert("❌ Server error, please check logs.");
+      } else {
+        alert(`❌ Unknown error: ${error.message}`);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  
+    
+
   return (
     <div className="min-h-screen bg-gray-100 p-6 text-black">
 
