@@ -1,6 +1,6 @@
 import multer from 'multer';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
-import cloudinary from './CouldinaryConfig'; 
+import { cloudinary } from "./CouldinaryConfig";
 import { PrismaClient } from '@prisma/client';
 import { authenticateToken } from './auth';
 
@@ -9,6 +9,7 @@ const prisma = new PrismaClient();
 
 const storage = new CloudinaryStorage({
   cloudinary,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   params: async (req, file) => {
     const { name } = req.body;
     const timestamp = Date.now();

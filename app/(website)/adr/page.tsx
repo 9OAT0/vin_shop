@@ -47,6 +47,7 @@ export default function AdrPage() {
 
             console.log("✅ API Response:", response.data);
             router.push("/");
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             console.error("❌ Error:", err.response?.data || err.message);
             setErrorMessage(err.response?.data?.error || "Something went wrong");

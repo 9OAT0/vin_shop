@@ -7,6 +7,7 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import SlidingTextBanner from './components/SlidingTextBanner';
 import Link from 'next/link';
+import Image from "next/image";
 
 interface Product { // กำหนดประเภทของผลิตภัณฑ์
   id: number; 
@@ -56,8 +57,8 @@ export default function Home() {
         />
         <Navbar />
         <div className="flex">
-          <img src="/Rectangle 268.png" alt="" className="w-full h-full" />
-          <img src="/man.png" alt="" className="w-full h-full" />
+          <Image src="/Rectangle 268.png" alt="" className="w-full h-full" />
+          <Image src="/man.png" alt="" className="w-full h-full" />
         </div>
         <div className="bg-white w-full h-[100px] flex items-center pl-[20px]">
           <h1 className="text-black text-[20px] font-bold">OUR RECOMMEND PRODUCT</h1>
@@ -88,10 +89,10 @@ export default function Home() {
             />
           ))}
         </div>
-        <img src="/img5.png" alt="" className='w-full h-[523px]' />
-        <img src="/Rectangle 271.png" alt="" className='w-full' />
+        <Image src="/img5.png" alt="" className='w-full h-[523px]' />
+        <Image src="/Rectangle 271.png" alt="" className='w-full' />
         <Footer />
-        <img src="/Rectangle 276.png" alt="" className='w-full' />
+        <Image src="/Rectangle 276.png" alt="" className='w-full' />
       </div>
     </>
   );

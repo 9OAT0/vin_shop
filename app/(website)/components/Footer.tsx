@@ -1,8 +1,10 @@
+import Link from "next/link";
+
 export default function ComponentsFooter() {
     return (
         <div className='flex justify-between'>
         <div className='bg-white w-[648px] h-[200px] border-black border-[1px] pl-[20px] pt-[20px]'>
-          <a href="/"><h1 className='text-black text-xl font-bold'>VIN_SHOP</h1></a>
+          <Link href="/"><h1 className='text-black text-xl font-bold'>VIN_SHOP</h1></Link>
         </div>
         <div className='bg-white w-[632px] h-[200px] border-black border-[1px] pl-[20px] py-5 flex flex-col'>
           <h1 className='text-black text-xl font-bold'>ABOUT US</h1>

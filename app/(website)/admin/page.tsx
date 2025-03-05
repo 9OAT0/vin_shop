@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation"; // ✅ ใช้ useRouter
+import Image from "next/image";
 
 interface Product {
   id: string; // ✅ เปลี่ยนเป็น string เนื่องจาก MongoDB ใช้ ObjectId
@@ -138,7 +139,7 @@ const ProductManagement: React.FC = () => {
                 />
               </td>
               <td style={{ border: "1px solid #ddd", padding: "8px" }}>
-                <img
+                <Image
                   src={product.pictures[0] || "/placeholder.jpg"} // ✅ ใช้ภาพ placeholder ถ้าไม่มี
                   alt={product.name}
                   style={{ width: "50px", height: "50px", objectFit: "cover" }}

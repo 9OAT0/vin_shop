@@ -1,10 +1,13 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import { useEffect, useState } from "react";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { useRouter } from "next/navigation";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import Link from "next/link";
+import Image from "next/image";
 
 interface Product {
   productName: string;
@@ -28,11 +31,13 @@ export default function CartPage() {
   const [token, setAuthToken] = useState<string | null>(null);
   const [isOverlayVisible, setOverlayVisible] = useState<boolean>(false);
   const [paymentAmount, setPaymentAmount] = useState<number | null>(null); // สำหรับจัดเก็บราคา
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null); // สำหรับจัดเก็บ URL ของ QR Code
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [paymentData, setPaymentData] = useState<any | null>(null); // สำหรับเก็บข้อมูลการชำระเงิน
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
-
+  
   useEffect(() => {
     const storedUserId = localStorage.getItem("userId");
     const storedAuthToken = localStorage.getItem("token");
@@ -108,7 +113,12 @@ export default function CartPage() {
         console.error('Error deleting product:', errorData.error);
       }
     } catch (error) {
-      console.error("Error during delete:", error.message);
+      if (error instanceof Error) {
+        console.error("Error during delete:", error.message);
+      } else {
+        console.error("Unknown error occurred:", error);
+      }
+      
     }
   };
 
@@ -144,7 +154,12 @@ export default function CartPage() {
         console.error("Payment link not found");
       }
     } catch (error) {
-      console.error("Error during payment:", error.message);
+      if (error instanceof Error) {
+        console.error("Error during delete:", error.message);
+      } else {
+        console.error("Unknown error occurred:", error);
+      }
+      
     }
   };
 
@@ -187,7 +202,12 @@ export default function CartPage() {
           setUploadStatus("Upload failed ❌");
         }
       } catch (error) {
-        console.error("Error during upload:", error.message);
+        if (error instanceof Error) {
+          console.error("Error during delete:", error.message);
+        } else {
+          console.error("Unknown error occurred:", error);
+        }
+        
         setUploadStatus("Upload error ❌");
       }
     } else {
@@ -228,7 +248,7 @@ export default function CartPage() {
                     className="flex items-center cursor-pointer"
                     href={`/buy?id=${item.productId}`}
                   >
-                    <img
+                    <Image
                       src={item.firstPicture}
                       alt={item.productName}
                       className="w-16 h-16 object-cover mr-4"
@@ -267,7 +287,7 @@ export default function CartPage() {
                   <p>รายละเอียดชำระเงิน...</p>
                   {paymentData &&
                     paymentData.paymentLink && ( // ใช้ paymentData
-                      <img
+                      <Image
                         src={paymentData.paymentLink}
                         alt="QR Code"
                         className="mt-4"
@@ -305,12 +325,12 @@ export default function CartPage() {
             )}
 
             <div className="pl-5">
-              <a href="/" className="border-black border-b">
+              <Link href="/" className="border-black border-b">
                 กลับไปช็อปปิ้ง →
-              </a>
+              </Link>
             </div>
           </div>
-          <img src="/Rectangle 271.png" alt="Banner" className="w-full h-12" />
+          <Image src="/Rectangle 271.png" alt="Banner" className="w-full h-12" />
         </div>
         <Footer />
       </div>

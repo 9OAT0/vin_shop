@@ -3,27 +3,19 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Link from "next/link";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { NextResponse } from "next/server";
-
-export async function PUT(req, { params }) {
-    try {
-        const orderId = params.id;
-        const body = await req.json();
-
-        if (!orderId) {
-            return NextResponse.json({ error: "Order ID is required" }, { status: 400 });
-        }
-
-        // 🔧 Mock database update (replace with actual DB logic)
-        console.log("Updating order:", orderId, body);
-
-        return NextResponse.json({ message: "Order updated successfully" });
-    } catch (error) {
-        return NextResponse.json({ error: "Server error" }, { status: 500 });
-    }
-}
-
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
 
 // Define types for product and order
 interface Product {
@@ -33,6 +25,7 @@ interface Product {
 }
 
 interface Order {
+  trackingId: string;
   id: string;
   status: string;
   createdAt: string;
@@ -70,28 +63,29 @@ const Dashboard: React.FC = () => {
   const fetchOrders = async () => {
     try {
       const token = localStorage.getItem("token");
-  
+
       if (!token) {
         console.error("❌ Token not found in localStorage");
         alert("❌ กรุณาเข้าสู่ระบบใหม่");
         return;
       }
-  
+
       console.log("📌 Fetching orders with token:", token);
-  
-      const response = await axios.get('/api/getOrderAdmin', {
+
+      const response = await axios.get<Order[]>("/api/getOrderAdmin", {
         headers: { Authorization: `Bearer ${token}` },
       });
-  
-      console.log("✅ Orders Data:", response.data);
-      setOrders(response.data);
-    } catch (error) {
-      console.error("❌ Error fetching orders:", error.response?.data || error.message);
+      setOrders(response.data); // ✅ Now TypeScript knows response.data is an Order[]
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      // ✅ Explicitly type `error`
+      console.error(
+        "❌ Error fetching orders:",
+        error.response?.data || error.message
+      );
       alert("❌ ไม่สามารถโหลดคำสั่งซื้อได้");
     }
   };
-  
-  
 
   // Fetch report
   const fetchReport = async () => {
@@ -135,55 +129,51 @@ const Dashboard: React.FC = () => {
       alert("❌ กรุณาเลือกคำสั่งซื้อก่อนอัปเดต");
       return;
     }
-  
+
     setLoading(true);
-  
+
     try {
       const token = localStorage.getItem("token");
-      const apiUrl = `http://localhost:3001/api/orderFix/${editOrder.id}`;
-  
+      const apiUrl = `/api/orders/update`;
+
       console.log("📡 Sending PUT request to:", apiUrl);
-      console.log("📝 Data Sent:", { status: newStatus, trackingId: newTrackingId });
-  
+      console.log("📝 Data Sent:", {
+        orderId: editOrder.id,
+        status: newStatus,
+        trackingId: newTrackingId,
+      });
+
       const response = await axios.put(
         apiUrl,
         {
-          status: newStatus.toUpperCase(), // ✅ Ensure status is in uppercase
+          orderId: editOrder.id,
+          status: newStatus.toUpperCase(),
           trackingId: newTrackingId || null,
         },
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-  
+
       console.log("✅ Order updated successfully:", response.data);
       alert("✅ อัปเดตคำสั่งซื้อสำเร็จ!");
       setEditOrder(null);
       fetchOrders();
-    } catch (error) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
       console.error("❌ Error updating order:", error);
-      console.error("🔎 Full error details:", error.response?.status, error.response?.data);
-  
-      if (error.response?.status === 400) {
-        alert(`🚨 Update failed: ${error.response?.data?.error}`);
-      } else if (error.response?.status === 500) {
-        alert("❌ Server error, please check logs.");
-      } else {
-        alert(`❌ Unknown error: ${error.message}`);
-      }
+      alert(
+        `❌ Update failed: ${error.response?.data?.error || error.message}`
+      );
     } finally {
       setLoading(false);
     }
   };
-  
-  
-    
 
   return (
     <div className="min-h-screen bg-gray-100 p-6 text-black">
-
-       {/* ✅ TabBar Navigation */}
-       <div className="bg-white p-4 rounded-lg shadow-md mb-6 flex justify-between">
+      {/* ✅ TabBar Navigation */}
+      <div className="bg-white p-4 rounded-lg shadow-md mb-6 flex justify-between">
         <Link href="/admin">
           <button className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
             🛠️ Product Edit
@@ -237,8 +227,12 @@ const Dashboard: React.FC = () => {
               <tr key={order.id} className="border border-gray-300">
                 <td className="border border-gray-300 p-2">{order.id}</td>
                 <td className="border border-gray-300 p-2">{order.status}</td>
-                <td className="border border-gray-300 p-2">{order.trackingId || "N/A"}</td>
-                <td className="border border-gray-300 p-2">{new Date(order.createdAt).toLocaleString()}</td>
+                <td className="border border-gray-300 p-2">
+                  {order.trackingId || "N/A"}
+                </td>
+                <td className="border border-gray-300 p-2">
+                  {new Date(order.createdAt).toLocaleString()}
+                </td>
                 <td className="border border-gray-300 p-2">
                   <button
                     onClick={() => openEditModal(order)}
@@ -253,18 +247,36 @@ const Dashboard: React.FC = () => {
         </table>
       </section>
 
-       {/* ✅ Order Edit Modal */}
-       {editOrder && (
+      {/* ✅ Order Edit Modal */}
+      {editOrder && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
           <div className="bg-white p-6 rounded-lg shadow-lg w-96">
             <h2 className="text-xl font-semibold mb-4">แก้ไขคำสั่งซื้อ</h2>
             <label className="block mb-2">สถานะ:</label>
-            <input type="text" value={newStatus} onChange={(e) => setNewStatus(e.target.value)} className="w-full p-2 border border-gray-300 rounded mb-3" />
+            <input
+              type="text"
+              value={newStatus}
+              onChange={(e) => setNewStatus(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded mb-3"
+            />
             <label className="block mb-2">Tracking ID:</label>
-            <input type="text" value={newTrackingId} onChange={(e) => setNewTrackingId(e.target.value)} className="w-full p-2 border border-gray-300 rounded mb-3" />
+            <input
+              type="text"
+              value={newTrackingId}
+              onChange={(e) => setNewTrackingId(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded mb-3"
+            />
             <div className="flex justify-end">
-              <button onClick={closeEditModal} className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 mr-2">ยกเลิก</button>
-              <button onClick={handleUpdateOrder} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+              <button
+                onClick={closeEditModal}
+                className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 mr-2"
+              >
+                ยกเลิก
+              </button>
+              <button
+                onClick={handleUpdateOrder}
+                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              >
                 {loading ? "⏳ กำลังบันทึก..." : "💾 บันทึก"}
               </button>
             </div>
@@ -307,7 +319,10 @@ const Dashboard: React.FC = () => {
                 label
               >
                 {report.statusSummary.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={colors[index % colors.length]}
+                  />
                 ))}
               </Pie>
               <Tooltip />

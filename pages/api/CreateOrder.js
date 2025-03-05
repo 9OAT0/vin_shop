@@ -1,6 +1,6 @@
 import multer from 'multer';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
-import cloudinary from './CouldinaryConfig'; 
+import { cloudinary } from "./CouldinaryConfig";
 import { PrismaClient } from '@prisma/client';
 import { authenticateToken } from './auth';
 
@@ -8,16 +8,18 @@ const prisma = new PrismaClient();
 
 const storage = new CloudinaryStorage({
   cloudinary,
-  params: async (req, file) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  params: async (req, _file) => { // ✅ No TypeScript types needed
     const { name } = req.body;
     const timestamp = Date.now();
     return {
-      folder: 'paymentSlip',
-      allowedFormat: ['jpg', 'png', 'jpeg'],
-      public_id: `${name}_${timestamp}`
+      folder: "paymentSlip",
+      allowedFormats: ["jpg", "png", "jpeg"], // ✅ Fixed key name
+      public_id: `${name}_${timestamp}`,
     };
   },
 });
+
 
 const upload = multer({
   storage,

@@ -1,7 +1,9 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Image from "next/image";
 
 interface Product {
   id: string;
@@ -59,6 +61,7 @@ export default function EditProductPage() {
           size: data.size || "",
           description: data.description || "",
         });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
         setError(err.message);
         console.error("❌ Error fetching product:", err.message);
@@ -113,6 +116,7 @@ export default function EditProductPage() {
       setPreviewImages(updatedProduct.pictures || []); // ✅ แสดงรูปใหม่หลังอัปเดตสำเร็จ
       alert("✅ Updated successfully!");
       router.push(`/product/${id}`);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       alert("❌ Error updating product: " + err.message);
     }
@@ -152,7 +156,7 @@ export default function EditProductPage() {
         <div className="mt-4 flex gap-4 flex-wrap">
           {previewImages.map((pic, index) => (
             <div key={index} className="relative">
-              <img src={pic} alt="Product Preview" className="w-32 h-32 object-cover rounded" />
+              <Image src={pic} alt="Product Preview" className="w-32 h-32 object-cover rounded" />
               <button
                 onClick={() => handleRemoveImage(index)}
                 className="absolute top-0 right-0 bg-red-500 text-white px-2 py-1 rounded-full"

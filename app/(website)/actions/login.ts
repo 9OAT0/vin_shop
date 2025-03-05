@@ -2,6 +2,7 @@
  
 import { redirect } from 'next/navigation'
  
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function login(prevState: any, formData: FormData) {
 
     const rawFormData = {

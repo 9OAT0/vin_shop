@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useForm } from "react-hook-form";
+import Image from "next/image";
 
 interface ProductFormData {
   name: string;
@@ -166,7 +167,7 @@ const ProductUpload: React.FC = () => {
             <div className="flex gap-2 mt-2 flex-wrap">
               {previewImages.map((src, index) => (
                 <div key={index} className="relative">
-                  <img src={src} alt={`preview-${index}`} className="w-16 h-16 object-cover rounded" />
+                  <Image src={src} alt={`preview-${index}`} className="w-16 h-16 object-cover rounded" />
                   <button
                     type="button"
                     onClick={() => handleRemoveImage(index)}
