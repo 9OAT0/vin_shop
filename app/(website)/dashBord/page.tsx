@@ -159,6 +159,7 @@ const Dashboard: React.FC = () => {
       alert("✅ อัปเดตคำสั่งซื้อสำเร็จ!");
       setEditOrder(null);
       fetchOrders();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error("❌ Error updating order:", error);
       alert(
