@@ -1,231 +1,215 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import axios from "axios";
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useDropzone } from "react-dropzone";
+
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  size: string;
+  description: string;
+  pictures: string[]; // ✅ รองรับหลายรูป
+}
 
 export default function EditProductPage() {
   const params = useParams();
+  const id = Array.isArray(params?.id) ? params.id[0] : params?.id; // ✅ แปลงให้เป็น string แน่นอน
   const router = useRouter();
-  const [authToken, setAuthToken] = useState(null);
-  const [selectedFiles, setSelectedFiles] = useState([]);
-  const [product, setProduct] = useState({
+
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
+  const [previewImages, setPreviewImages] = useState<string[]>([]); // ✅ เก็บรูปภาพที่อัปโหลด
+  const [formData, setFormData] = useState({
     name: "",
-    size: "",
     price: "",
+    size: "",
     description: "",
-    pictures: [],
   });
 
   useEffect(() => {
-    const token = localStorage.getItem("token") || "";
-    setAuthToken(token);
-  }, []);
-
-  // ✅ ดึงข้อมูลสินค้าเดิมจาก API
-  useEffect(() => {
-    if (!params.id) return;
+    if (!id) return;
 
     const fetchProduct = async () => {
+      setLoading(true);
       try {
-        const response = await axios.get(`/api/product_fix/${params.id}`);
+        console.log("📢 Fetching product with ID:", id);
 
-        let pictures = response.data.pictures;
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("❌ No token found. Please login.");
 
-        if (typeof pictures === "string") {
-          try {
-            pictures = JSON.parse(pictures);
-          } catch (error) {
-            console.error("❌ Failed to parse pictures JSON:", error.message);
-            pictures = [pictures];
-          }
-        }
+        const response = await fetch(`/api/product_fix/${id}`, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
 
-        setProduct({ ...response.data, pictures });
-      } catch (error) {
-        console.error("❌ Error fetching product:", error);
+        if (!response.ok) throw new Error(`❌ Failed to fetch product: ${response.statusText}`);
+
+        const data: Product = await response.json();
+        setProduct(data);
+        setPreviewImages(data.pictures || []); // ✅ แสดงรูปเดิมก่อนอัปโหลดใหม่
+        setFormData({
+          name: data.name || "",
+          price: data.price.toString() || "",
+          size: data.size || "",
+          description: data.description || "",
+        });
+      } catch (err: any) {
+        setError(err.message);
+        console.error("❌ Error fetching product:", err.message);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchProduct();
-  }, [params.id]);
+  }, [id]);
 
-  // ✅ ฟังก์ชันอัปเดตค่าข้อมูลสินค้า
-  const handleChange = (e) => {
-    setProduct({ ...product, [e.target.name]: e.target.value });
-  };
-
-  // ✅ ฟังก์ชันอัปโหลดรูป
-  const { getRootProps, getInputProps } = useDropzone({
-    accept: "image/*",
-    multiple: true,
-    maxFiles: 5, // ✅ จำกัดให้เลือกได้สูงสุด 5 รูป
-    onDrop: (acceptedFiles) => {
-      if (product.pictures.length + acceptedFiles.length > 5) {
-        alert("❌ You can only upload up to 5 images.");
-        return;
-      }
-      setSelectedFiles([...selectedFiles, ...acceptedFiles]);
-      setProduct({
-        ...product,
-        pictures: [
-          ...product.pictures,
-          ...acceptedFiles.map((file) => URL.createObjectURL(file)),
-        ],
-      });
-    },
-  });
-
-  // ✅ ฟังก์ชันลบรูปภาพจากรายการ
-  const handleRemoveImage = (index) => {
-    const updatedPictures = [...product.pictures];
-    updatedPictures.splice(index, 1);
-    setProduct({ ...product, pictures: updatedPictures });
-
-    if (index < selectedFiles.length) {
-      const updatedFiles = [...selectedFiles];
-      updatedFiles.splice(index, 1);
-      setSelectedFiles(updatedFiles);
-    }
-  };
-
-  // ✅ ฟังก์ชันส่งข้อมูลไป API
-  const handleSubmit = async (e) => {
+  // ✅ อัปเดตสินค้าและเพิ่มรูปภาพหลายรูป
+  const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    const formData = new FormData();
-    formData.append("name", product.name);
-    formData.append("size", product.size);
-    formData.append("price", product.price);
-    formData.append("description", product.description);
 
-    // ✅ ถ้ามีรูปใหม่ให้ใช้ selectedFiles
-    if (selectedFiles.length > 0) {
-      selectedFiles.forEach((file) => formData.append("pictures", file));
-    } else {
-      product.pictures.forEach((url) => formData.append("pictures", url));
+    const updateFormData = new FormData();
+    updateFormData.append("name", formData.name);
+    updateFormData.append("price", formData.price);
+    updateFormData.append("size", formData.size);
+    updateFormData.append("description", formData.description);
+
+    // ✅ ส่งเฉพาะรูปภาพที่ไม่ถูกลบ
+    previewImages.forEach((img) => {
+      updateFormData.append("pictures", img);
+    });
+
+    if (selectedFiles) {
+      for (let i = 0; i < selectedFiles.length; i++) {
+        updateFormData.append("pictures", selectedFiles[i]); // ✅ รองรับหลายรูป
+      }
     }
 
     try {
-      await axios.put(`/api/product_fix/${params.id}`, formData, {
-        headers: { Authorization: `Bearer ${authToken}` },
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("❌ No token found. Please login.");
+
+      const response = await fetch(`/api/product_fix/${id}`, {
+        method: "PUT",
+        headers: {
+          "Authorization": `Bearer ${token}`, // ✅ ต้องส่ง Token
+        },
+        body: updateFormData,
       });
 
-      alert("✅ Product updated successfully!");
-      router.push("/admin");
-    } catch (error) {
-      console.error("❌ Error updating product:", error);
-      alert("❌ Failed to update product!");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`❌ Failed to update product: ${errorData.error || response.statusText}`);
+      }
+
+      const updatedProduct = await response.json();
+      setProduct(updatedProduct);
+      setPreviewImages(updatedProduct.pictures || []); // ✅ แสดงรูปใหม่หลังอัปเดตสำเร็จ
+      alert("✅ Updated successfully!");
+      router.push(`/product/${id}`);
+    } catch (err: any) {
+      alert("❌ Error updating product: " + err.message);
     }
   };
 
+  // ✅ จัดการการเปลี่ยนค่าฟอร์ม
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  // ✅ แสดงตัวอย่างรูปภาพที่อัปโหลด
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      setSelectedFiles(files);
+
+      // ✅ แปลงไฟล์เป็น URL เพื่อแสดง Preview
+      const previews = Array.from(files).map(file => URL.createObjectURL(file));
+      setPreviewImages([...previewImages, ...previews]);
+    }
+  };
+
+  // ✅ ลบรูปภาพที่อัปโหลดผิด
+  const handleRemoveImage = (index: number) => {
+    setPreviewImages(previewImages.filter((_, i) => i !== index));
+  };
+
+  if (loading) return <p>Loading...</p>;
+  if (error) return <p className="text-red-500">❌ {error}</p>;
+
   return (
-    <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-md">
-      <h1 className="text-2xl font-bold text-center mb-4">Edit Product</h1>
+    <div className="max-w-4xl mx-auto p-6">
+      <h1 className="text-2xl font-bold">✏️ แก้ไขสินค้า</h1>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Product Name */}
-        <div>
-          <label className="block font-semibold">Product Name:</label>
-          <input
-            type="text"
-            name="name"
-            value={product.name}
-            onChange={handleChange}
-            required
-            className="w-full p-2 border rounded-md"
-          />
+      {/* ✅ แสดงรูปภาพเดิม + รูปที่อัปโหลดใหม่ พร้อมปุ่มลบ */}
+      {previewImages.length > 0 && (
+        <div className="mt-4 flex gap-4 flex-wrap">
+          {previewImages.map((pic, index) => (
+            <div key={index} className="relative">
+              <img src={pic} alt="Product Preview" className="w-32 h-32 object-cover rounded" />
+              <button
+                onClick={() => handleRemoveImage(index)}
+                className="absolute top-0 right-0 bg-red-500 text-white px-2 py-1 rounded-full"
+              >
+                ✖
+              </button>
+            </div>
+          ))}
         </div>
+      )}
 
-        {/* Size */}
-        <div>
-          <label className="block font-semibold">Size:</label>
-          <input
-            type="text"
-            name="size"
-            value={product.size}
-            onChange={handleChange}
-            required
-            className="w-full p-2 border rounded-md"
-          />
-        </div>
+      <form className="mt-6 space-y-4" onSubmit={handleUpdate}>
+        <input
+          type="text"
+          name="name"
+          placeholder="ชื่อสินค้า"
+          value={formData.name}
+          onChange={handleChange}
+          className="w-full p-2 border rounded"
+        />
+        <input
+          type="text"
+          name="price"
+          placeholder="ราคา"
+          value={formData.price}
+          onChange={handleChange}
+          className="w-full p-2 border rounded"
+        />
+        <input
+          type="text"
+          name="size"
+          placeholder="ขนาด"
+          value={formData.size}
+          onChange={handleChange}
+          className="w-full p-2 border rounded"
+        />
+        <textarea
+          name="description"
+          placeholder="คำอธิบายสินค้า"
+          value={formData.description}
+          onChange={handleChange}
+          className="w-full p-2 border rounded"
+        />
+        
+        {/* ✅ อัปโหลดรูปภาพได้หลายรูป */}
+        <input type="file" multiple onChange={handleFileChange} className="w-full p-2 border rounded" />
 
-        {/* Price */}
-        <div>
-          <label className="block font-semibold">Price ($):</label>
-          <input
-            type="number"
-            name="price"
-            value={product.price}
-            onChange={handleChange}
-            required
-            className="w-full p-2 border rounded-md"
-          />
-        </div>
-
-        {/* Description */}
-        <div>
-          <label className="block font-semibold">Details:</label>
-          <textarea
-            name="description"
-            value={product.description}
-            onChange={handleChange}
-            required
-            className="w-full p-2 border rounded-md"
-          />
-        </div>
-
-        {/* Product Images */}
-        <div>
-          <label className="block font-semibold">Product Images:</label>
-
-          {/* Dropzone */}
-          <div
-            {...getRootProps()}
-            className="mt-2 p-4 border-2 border-dashed rounded-md cursor-pointer text-center bg-gray-100"
-          >
-            <input {...getInputProps()} />
-            <p>Drag & drop images here, or click to select</p>
-          </div>
-
-          {/* ✅ แสดงพรีวิวรูปภาพ */}
-          <div className="flex flex-wrap gap-2 mt-3">
-            {product.pictures.map((pic, index) => (
-              <div key={index} className="relative">
-                <img
-                  src={pic}
-                  alt="Product"
-                  className="w-20 h-20 object-cover rounded-md border"
-                />
-                <button
-                  type="button"
-                  onClick={() => handleRemoveImage(index)}
-                  className="absolute top-0 right-0 bg-red-500 text-white text-xs px-1 py-0.5 rounded-md"
-                >
-                  ✖
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Buttons */}
-        <div className="flex justify-between">
-          <button
-            type="submit"
-            className="px-4 py-2 bg-blue-500 text-white rounded-md"
-          >
-            Save
-          </button>
-          <button
-            type="button"
-            onClick={() => router.push("/admin")}
-            className="px-4 py-2 bg-gray-500 text-white rounded-md"
-          >
-            Cancel
-          </button>
-        </div>
+        <button type="submit" className="bg-blue-500 text-white p-2 rounded">
+          ✅ บันทึกการเปลี่ยนแปลง
+        </button>
       </form>
+
+      <div className="mt-4 flex gap-4">
+        <button onClick={() => router.push(`/product/${id}`)} className="text-blue-500 underline">
+          🔙 กลับไปที่หน้าสินค้า
+        </button>
+      </div>
     </div>
   );
 }

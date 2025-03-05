@@ -31,6 +31,7 @@ export default function CartPage() {
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null); // สำหรับจัดเก็บ URL ของ QR Code
   const [paymentData, setPaymentData] = useState<any | null>(null); // สำหรับเก็บข้อมูลการชำระเงิน
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
 
   useEffect(() => {
     const storedUserId = localStorage.getItem("userId");
@@ -115,6 +116,8 @@ export default function CartPage() {
     setOverlayVisible(!isOverlayVisible);
   };
 
+  
+
   const handlePayment = async () => {
     try {
       const response = await fetch(`/api/payment/${userId}`, {
@@ -152,39 +155,46 @@ export default function CartPage() {
 
   const handleUpload = async () => {
     if (!userId) {
-        console.error("User ID is not available. Please log in again.");
-        return;
+      console.error("User ID is not available. Please log in again.");
+      return;
     }
 
     if (selectedImage) {
-        const formData = new FormData();
-        formData.append('paymentSlip', selectedImage); // เพิ่มไฟล์ที่เลือก
-        formData.append('userId', userId); // เพิ่ม userId ที่เก็บไว้ใน state
+      // ✅ ปิด Overlay ทันทีที่กด Upload
+      setOverlayVisible(false);
+      setUploadStatus("Uploading..."); // ✅ แจ้งให้ผู้ใช้รู้ว่าไฟล์กำลังอัปโหลด
 
-        try {
-            const response = await fetch('/api/CreateOrder', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    Authorization: `Bearer ${token}`, // ส่ง token ถ้ามีการใช้งาน
-                },
-            });
+      const formData = new FormData();
+      formData.append("paymentSlip", selectedImage);
+      formData.append("userId", userId);
 
-            if (response.ok) {
-                const responseData = await response.json();
-                console.log('Upload successful:', responseData);
-                // คุณสามารถทำการแสดงผลหรืออัปเดตสถานะหลังการอัพโหลดได้ที่นี่
-            } else {
-                const errorData = await response.json();
-                console.error('Error uploading file:', errorData.error);
-            }
-        } catch (error) {
-            console.error('Error during upload:', error.message);
+      try {
+        const response = await fetch("/api/CreateOrder", {
+          method: "POST",
+          body: formData,
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const responseData = await response.json();
+          console.log("Upload successful:", responseData);
+          setUploadStatus("Upload successful ✅"); // ✅ แจ้งเตือนเมื่ออัปโหลดเสร็จ
+        } else {
+          const errorData = await response.json();
+          console.error("Error uploading file:", errorData.error);
+          setUploadStatus("Upload failed ❌");
         }
+      } catch (error) {
+        console.error("Error during upload:", error.message);
+        setUploadStatus("Upload error ❌");
+      }
     } else {
-        console.error("No file selected");
+      console.error("No file selected");
+      setUploadStatus("Please select a file ⚠️");
     }
-};
+  };
 
   return (
     <>

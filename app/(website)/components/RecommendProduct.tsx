@@ -20,13 +20,13 @@ export default function RecommendedProducts() {
     const fetchRecommendedProducts = async () => {
       setLoading(true);
       try {
-        console.log("📢 Fetching recommendations from /api/recommendations...."); // ✅ Debug
+        console.log("📢 Fetching recommendations from /api/recommended...");
 
         const response = await fetch("/api/recommendations");
         if (!response.ok) throw new Error(`❌ Failed to fetch: ${response.statusText}`);
 
         const data: Product[] = await response.json();
-        console.log("✅ Data received:", data); // ✅ Debug
+        console.log("✅ Data received:", data);
 
         if (data.length === 0) {
           setError("❌ No recommended products available.");
@@ -47,10 +47,11 @@ export default function RecommendedProducts() {
   if (error) return <p className="text-red-500">{error}</p>;
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-[200%]">
       {products.map((product) => (
         <Recprod
           key={product.id}
+          id={product.id} // ✅ ส่ง `id` ไปให้ `Recprod`
           imageSrc={product.pictures?.[0] || "/default.jpg"}
           name={product.name}
           price={typeof product.price === "number" ? product.price.toString() : product.price}

@@ -1,28 +1,31 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 export default async function handler(req, res) {
-  if (req.method === 'GET') {
+  if (req.method === "GET") {
     try {
-      // ดึงข้อมูลผลิตภัณฑ์ทั้งหมด
+      console.log("📢 Fetching recommended products...");
+
       const allProducts = await prisma.products.findMany();
-      
-      // หากมีผลิตภัณฑ์มากกว่า 4 ชิ้น จะสุ่ม 4 ชิ้น
+      console.log("✅ Total Products Found:", allProducts.length);
+
+      if (allProducts.length === 0) {
+        return res.status(404).json({ error: "❌ No products found." });
+      }
+
       const count = allProducts.length <= 4 ? allProducts.length : 4;
+      const recommendedProducts = allProducts.sort(() => 0.5 - Math.random()).slice(0, count);
 
-      const recommendedProducts = allProducts
-        .sort(() => 0.5 - Math.random()) // สุ่มรายการ
-        .slice(0, count); // ดึงรายการตามจำนวนที่มี
-
-      res.status(200).json(recommendedProducts); // ส่งข้อมูลผลิตภัณฑ์ที่สุ่มมา
+      console.log("✅ Recommended Products:", recommendedProducts);
+      res.status(200).json(recommendedProducts);
     } catch (error) {
-      console.error('Error fetching recommendations:', error.message);
-      res.status(500).json({ error: 'Error fetching recommendations', details: error.message });
+      console.error("❌ Error fetching recommendations:", error.message);
+      res.status(500).json({ error: "❌ Internal Server Error", details: error.message });
     } finally {
       await prisma.$disconnect();
     }
   } else {
-    res.status(405).json({ error: 'Method Not Allowed' });
+    res.status(405).json({ error: "❌ Method Not Allowed" });
   }
 }
