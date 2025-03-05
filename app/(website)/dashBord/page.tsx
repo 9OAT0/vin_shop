@@ -50,6 +50,37 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   // Fetch all products
+  const fetchOrders = async () => {
+    try {
+      const token = localStorage.getItem("token");
+  
+      if (!token) {
+        console.error("❌ Token not found in localStorage");
+        alert("❌ กรุณาเข้าสู่ระบบใหม่");
+        return;
+      }
+  
+      const response = await axios.get("/api/getOrderAdmin", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+  
+      // Assuming response.data is the structure you're expecting
+      const data = response.data as { orders: Order[] };
+      setOrders(data.orders);
+  
+    } catch (error: unknown) {
+      // TypeScript now expects you to handle `unknown` type errors safely
+      if (error instanceof Error) {
+        // General error handling
+        console.error("❌ Unexpected error:", error.message);
+        alert(`❌ Unexpected error: ${error.message}`);
+      } else {
+        // For cases when the error is not an instance of Error
+        console.error("❌ An unknown error occurred", error);
+      }
+    }
+  };
+
   const fetchProducts = async () => {
     try {
       const response = await axios.get<Product[]>("/api/productGet");
@@ -59,33 +90,7 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  // Fetch all orders
-  const fetchOrders = async () => {
-    try {
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        console.error("❌ Token not found in localStorage");
-        alert("❌ กรุณาเข้าสู่ระบบใหม่");
-        return;
-      }
-
-      console.log("📌 Fetching orders with token:", token);
-
-      const response = await axios.get<Order[]>("/api/getOrderAdmin", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setOrders(response.data); // ✅ Now TypeScript knows response.data is an Order[]
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any) {
-      // ✅ Explicitly type `error`
-      console.error(
-        "❌ Error fetching orders:",
-        error.response?.data || error.message
-      );
-      alert("❌ ไม่สามารถโหลดคำสั่งซื้อได้");
-    }
-  };
+  
 
   // Fetch report
   const fetchReport = async () => {
@@ -139,11 +144,11 @@ const Dashboard: React.FC = () => {
       console.log("📡 Sending PUT request to:", apiUrl);
       console.log("📝 Data Sent:", {
         orderId: editOrder.id,
-        status: newStatus,
+        status: newStatus.toUpperCase(),
         trackingId: newTrackingId,
       });
 
-      const response = await axios.put(
+      const response = await axios.put<{ message: string }>(
         apiUrl,
         {
           orderId: editOrder.id,
@@ -155,16 +160,20 @@ const Dashboard: React.FC = () => {
         }
       );
 
-      console.log("✅ Order updated successfully:", response.data);
+      console.log("✅ Order updated successfully:", response.data.message);
       alert("✅ อัปเดตคำสั่งซื้อสำเร็จ!");
       setEditOrder(null);
       fetchOrders();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any) {
-      console.error("❌ Error updating order:", error);
-      alert(
-        `❌ Update failed: ${error.response?.data?.error || error.message}`
-      );
+    } catch (error: unknown) {
+      // If error is an instance of Error (a generic JavaScript error)
+      if (error instanceof Error) {
+        console.error("❌ Error updating order:", error.message);
+        alert(`❌ Update failed: ${error.message}`);
+      } else {
+        // If the error is not an instance of Error (such as a network error or custom error)
+        console.error("❌ An unknown error occurred", error);
+        alert(`❌ An unknown error occurred`);
+      }
     } finally {
       setLoading(false);
     }
