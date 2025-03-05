@@ -1,6 +1,6 @@
 import multer from "multer";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
-import { cloudinaryInstance } from "../CouldinaryConfig";
+import { cloudinary } from "../CouldinaryConfig";  // ✅ ใช้ Named Import ที่ถูกต้อง
 import { PrismaClient } from "@prisma/client";
 import { authenticateToken } from "../auth";
 
@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 
 // ✅ ตั้งค่า `multer-storage-cloudinary`
 const storage = new CloudinaryStorage({
-  cloudinary: cloudinaryInstance,
+  cloudinary,
   params: async (req, file) => {
     const { name } = req.body || { name: "unknown" };
     const timestamp = Date.now();
@@ -33,7 +33,7 @@ export default async function handler(req, res) {
   try {
     await authenticateToken(req, res, async () => {
       const { method } = req;
-      const id = req.query.id; // ✅ ใช้ `String` ตรงๆ ไม่ต้องแปลงเป็น `Int`
+      const { id } = req.query; // ✅ ใช้ `String` ตรงๆ ไม่ต้องแปลงเป็น `Int`
 
       if (method === "GET") {
         try {
