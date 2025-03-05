@@ -100,6 +100,7 @@ export default function BuyPage() {
             alert('Please log in to add products to your cart.'); // แจ้งผู้ใช้หากยังไม่ได้ล็อกอิน
             setIsAddingToCart(false); // Reset state
             return; // ถ้าไม่มี userId ให้ยกเลิก
+<<<<<<< Updated upstream
         }
     
         console.log('User ID:', userId); // ตรวจสอบ userId
@@ -155,6 +156,52 @@ export default function BuyPage() {
   const handleAddToCart = async () => {
     if (!product || isAddingToCart) return; // Prevent duplicates
     setIsAddingToCart(true);
+=======
+        }
+    
+        console.log('User ID:', userId); // ตรวจสอบ userId
+        console.log('Product ID:', product.id); // ตรวจสอบ product ID
+        console.log('Sending add to cart request:', { userId, productId: product.id });
+
+        try {
+            const response = await fetch('/api/addtocart', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': token ? `Bearer ${token}` : '',
+                },
+                body: JSON.stringify({
+                    userId,
+                    productId: product.id, // ส่ง productId
+                }),
+            });
+            
+            if (response.status !== 201) {
+                const errorData = await response.text();
+                console.error('Error data from API:', errorData); // Log ข้อมูลข้อผิดพลาด
+                alert('Product already in cart');
+            } 
+            else {
+                const result = await response.json();
+            console.log('Product added to cart:', result);
+            alert('Product added to cart successfully!');
+
+            }
+    
+            
+        } catch (error) {
+            if (error instanceof Error) {
+                console.error('Error adding product to cart:', error.message);
+                setError(error.message); // Set error message to state for rendering
+            } else {
+                console.error('Unexpected error:', error);
+                setError('Failed to add product to cart due to an unexpected error');
+            }
+        } finally {
+            setIsAddingToCart(false); // Reset state after operation
+        }
+    };
+>>>>>>> Stashed changes
 
     const userId = localStorage.getItem("userId");
     const token = localStorage.getItem("token");
@@ -211,6 +258,9 @@ export default function BuyPage() {
 
     if (error) {
         return <div className="error-message">{error}</div>; // Show error message to the user
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
     }
   };
@@ -357,5 +407,9 @@ export default function BuyPage() {
         </div>
       );
     }
+<<<<<<< Updated upstream
+    
+>>>>>>> Stashed changes
+=======
     
 >>>>>>> Stashed changes

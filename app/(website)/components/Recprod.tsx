@@ -1,10 +1,13 @@
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 import { useRouter } from "next/navigation";
 
 interface RecprodProps {
   id: string;
   imageSrc: string;
 =======
+=======
+>>>>>>> Stashed changes
 "use client";
 
 import { useEffect, useState } from "react";
@@ -12,6 +15,9 @@ import Recprod from "./Recprod";
 
 interface Product {
   id: string;
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
   name: string;
   price: number | string;
@@ -19,6 +25,7 @@ interface Product {
   pictures: string[];
 }
 
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 const Recprod: React.FC<RecprodProps> = ({ id, imageSrc, name, price, size }) => {
   const router = useRouter();
@@ -73,6 +80,44 @@ export default function RecommendedProducts() {
   if (error) return <p className="text-red-500">{error}</p>;
 
   return (
+=======
+export default function RecommendedProducts() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchRecommendedProducts = async () => {
+      setLoading(true);
+      try {
+        console.log("📢 Fetching recommendations from /api/recommendations...."); // ✅ Debug
+
+        const response = await fetch("/api/recommendations");
+        if (!response.ok) throw new Error(`❌ Failed to fetch: ${response.statusText}`);
+
+        const data: Product[] = await response.json();
+        console.log("✅ Data received:", data); // ✅ Debug
+
+        if (data.length === 0) {
+          setError("❌ No recommended products available.");
+        } else {
+          setProducts(data);
+        }
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecommendedProducts();
+  }, []);
+
+  if (loading) return <p>Loading recommendations...</p>;
+  if (error) return <p className="text-red-500">{error}</p>;
+
+  return (
+>>>>>>> Stashed changes
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
       {products.map((product) => (
         <Recprod
@@ -83,6 +128,9 @@ export default function RecommendedProducts() {
           size={product.size || "N/A"}
         />
       ))}
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
     </div>
   );
