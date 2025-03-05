@@ -2,10 +2,10 @@
 
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import { Key, useEffect, useState } from "react";
-import Recprod from "../components/Recprod";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import RecommendedProducts from "../components/RecommendProduct";
+import Image from "next/image";
 
 interface Product {
   id: number;
@@ -15,7 +15,7 @@ interface Product {
   size: string;
 }
 
-export default function BuyPage() {
+function BuyProductPage() {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -50,24 +50,17 @@ export default function BuyPage() {
   }, [id]);
 
   const handleAddToCart = async () => {
-    if (!product || isAddingToCart) return; // Prevent duplicates
+    if (!product || isAddingToCart) return;
     setIsAddingToCart(true);
 
     const userId = localStorage.getItem("userId");
     const token = localStorage.getItem("token");
 
     if (!userId) {
-      alert("Please log in to add products to your cart."); // แจ้งผู้ใช้หากยังไม่ได้ล็อกอิน
-      setIsAddingToCart(false); // Reset state
-      return; // ถ้าไม่มี userId ให้ยกเลิก
+      alert("Please log in to add products to your cart.");
+      setIsAddingToCart(false);
+      return;
     }
-
-    console.log("User ID:", userId); // ตรวจสอบ userId
-    console.log("Product ID:", product.id); // ตรวจสอบ product ID
-    console.log("Sending add to cart request:", {
-      userId,
-      productId: product.id,
-    });
 
     try {
       const response = await fetch("/api/addtocart", {
@@ -78,13 +71,13 @@ export default function BuyPage() {
         },
         body: JSON.stringify({
           userId,
-          productId: product.id, // ส่ง productId
+          productId: product.id,
         }),
       });
 
       if (response.status !== 201) {
         const errorData = await response.text();
-        console.error("Error data from API:", errorData); // Log ข้อมูลข้อผิดพลาด
+        console.error("Error data from API:", errorData);
         alert("Product already in cart");
       } else {
         const result = await response.json();
@@ -94,52 +87,46 @@ export default function BuyPage() {
     } catch (error) {
       if (error instanceof Error) {
         console.error("Error adding product to cart:", error.message);
-        setError(error.message); // Set error message to state for rendering
+        setError(error.message);
       } else {
         console.error("Unexpected error:", error);
         setError("Failed to add product to cart due to an unexpected error");
       }
     } finally {
-      setIsAddingToCart(false); // Reset state after operation
+      setIsAddingToCart(false);
     }
   };
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
-  if (error) {
-    return <div className="error-message">{error}</div>; // Show error message to the user
-  }
-
-  if (!product) {
-    return <div>Product not found.</div>;
-  }
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div className="error-message">{error}</div>;
+  if (!product) return <div>Product not found.</div>;
 
   return (
     <div className="min-h-screen bg-white text-black">
       <Navbar />
       <div className="flex flex-col lg:flex-row">
-        {/* แสดงภาพผลิตภัณฑ์ */}
         <div className="lg:w-1/2 p-5">
-          <img
+          <Image
             src={product.pictures?.[0] || "/default.jpg"}
             alt={product.name}
+            width={500}
+            height={500}
             className="w-full h-auto object-cover rounded-lg mb-4"
           />
           <div className="flex flex-wrap">
             {product.pictures?.slice(1).map((picture, index) => (
-              <img
+              <Image
                 key={index}
                 src={picture}
                 alt={`${product.name} Thumbnail`}
+                width={100}
+                height={100}
                 className="w-1/3 h-32 object-cover m-1 rounded-lg"
               />
             ))}
           </div>
         </div>
 
-        {/* แสดงรายละเอียดผลิตภัณฑ์ */}
         <div className="lg:w-1/2 p-5 flex flex-col sticky top-10 z-10 bg-white">
           <h1 className="text-2xl font-bold">{product.name}</h1>
           <div className="border border-gray-300 p-4 mt-4">
@@ -168,9 +155,18 @@ export default function BuyPage() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <RecommendedProducts />
+        <RecommendedProducts />
       </div>
       <Footer />
     </div>
+  );
+}
+
+// ✅ Wrap component in <Suspense> to prevent build errors
+export default function Page() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <BuyProductPage />
+    </Suspense>
   );
 }

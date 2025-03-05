@@ -16,6 +16,7 @@ const authenticateToken = async (req, res) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET); 
     return decoded; 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     return res.status(403).json({ error: 'Invalid or expired token' });
   }

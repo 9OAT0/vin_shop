@@ -9,6 +9,7 @@ const prisma = new PrismaClient();
 // ✅ ตั้งค่า `multer-storage-cloudinary`
 const storage = new CloudinaryStorage({
   cloudinary,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   params: async (req, file) => {
     const { name } = req.body || { name: "unknown" };
     const timestamp = Date.now();

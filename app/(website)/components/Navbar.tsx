@@ -1,5 +1,7 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @next/next/no-html-link-for-pages */
 import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 
@@ -40,8 +42,11 @@ export default function ComponentsNavbar() {
     const fetchCartDetails = async () => {
         if (!userId) return;
         try {
-            const response = await axios.get(`/api/getCartDetails`, { params: { userId } });
-            setTotalProducts(response.data.totalProducts || 0);
+            const response = await axios.get<{ totalProducts: number }>(`/api/getCartDetails`, {
+                params: { userId }
+              });
+              setTotalProducts(response.data.totalProducts || 0);
+              
         } catch (error) {
             console.error("❌ Error fetching cart details:", error);
             setTotalProducts(0);
@@ -52,11 +57,13 @@ export default function ComponentsNavbar() {
         if (userId) {
             fetchCartDetails();
         }
-    }, [userId]);
+    }, [fetchCartDetails, userId]);
 
     // ฟังก์ชัน debounce สำหรับ search
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const debounce = (func: (...args: any) => void, wait: number) => {
         let timeout: NodeJS.Timeout;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return (...args: any) => {
             clearTimeout(timeout);
             timeout = setTimeout(() => {
@@ -81,11 +88,12 @@ export default function ComponentsNavbar() {
 
         setLoading(true);
         try {
-            const response = await axios.get('/api/search', {
-                headers: { Authorization: `Bearer ${token}` },
-                params: { name: term },
-            });
-            setSuggestions(response.data);
+            const response = await axios.get<Product[]>('/api/search', { 
+                headers: { Authorization: `Bearer ${token}` }, 
+                params: { name: term } 
+              });
+              setSuggestions(response.data);
+              
         } catch (error) {
             console.error("Error fetching suggestions:", error);
             setSuggestions([]);
@@ -156,7 +164,7 @@ export default function ComponentsNavbar() {
                                         onClick={() => handleSelectProduct(product)}
                                     >
                                         <div className="flex items-center gap-4">
-                                            <img 
+                                            <Image 
                                                 src={product.pictures[0] || '/default.jpg'} 
                                                 alt={product.name} 
                                                 className="w-8 h-8 rounded" 

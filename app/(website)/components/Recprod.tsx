@@ -1,62 +1,23 @@
-"use client";
+import React from "react";
+import Image from "next/image";
 
-import { useEffect, useState } from "react";
-import Recprod from "./Recprod";
-
-interface Product {
+interface RecprodProps {
   id: string;
+  imageSrc: string;
   name: string;
-  price: number | string;
+  price: string;
   size: string;
-  pictures: string[];
 }
 
-export default function RecommendedProducts() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchRecommendedProducts = async () => {
-      setLoading(true);
-      try {
-        console.log("📢 Fetching recommendations from /api/recommendations...."); // ✅ Debug
-
-        const response = await fetch("/api/recommendations");
-        if (!response.ok) throw new Error(`❌ Failed to fetch: ${response.statusText}`);
-
-        const data: Product[] = await response.json();
-        console.log("✅ Data received:", data); // ✅ Debug
-
-        if (data.length === 0) {
-          setError("❌ No recommended products available.");
-        } else {
-          setProducts(data);
-        }
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchRecommendedProducts();
-  }, []);
-
-  if (loading) return <p>Loading recommendations...</p>;
-  if (error) return <p className="text-red-500">{error}</p>;
-
+const Recprod: React.FC<RecprodProps> = ({ imageSrc, name, price, size }) => {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-      {products.map((product) => (
-        <Recprod
-          key={product.id}
-          imageSrc={product.pictures?.[0] || "/default.jpg"}
-          name={product.name}
-          price={typeof product.price === "number" ? product.price.toString() : product.price}
-          size={product.size || "N/A"}
-        />
-      ))}
+    <div className="border p-4 shadow-lg rounded-md">
+      <Image src={imageSrc} alt={name} className="w-full h-40 object-cover rounded-md" />
+      <h2 className="text-lg font-bold mt-2">{name}</h2>
+      <p className="text-gray-500">Size: {size}</p>
+      <p className="text-red-500 font-bold">฿{price}</p>
     </div>
   );
-}
+};
+
+export default Recprod;

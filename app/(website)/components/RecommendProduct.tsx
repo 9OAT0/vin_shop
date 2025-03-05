@@ -33,6 +33,7 @@ export default function RecommendedProducts() {
         } else {
           setProducts(data);
         }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -50,13 +51,13 @@ export default function RecommendedProducts() {
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-[200%]">
       {products.map((product) => (
         <Recprod
-          key={product.id}
-          id={product.id} // ✅ ส่ง `id` ไปให้ `Recprod`
-          imageSrc={product.pictures?.[0] || "/default.jpg"}
-          name={product.name}
-          price={typeof product.price === "number" ? product.price.toString() : product.price}
-          size={product.size || "N/A"}
-        />
+        key={product.id}
+        id={product.id} // ✅ Now `id` is valid!
+        imageSrc={product.pictures?.[0] || "/default.jpg"}
+        name={product.name}
+        price={typeof product.price === "number" ? product.price.toString() : product.price}
+        size={product.size || "N/A"}
+      />      
       ))}
     </div>
   );

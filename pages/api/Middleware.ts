@@ -1,22 +1,22 @@
 // pages/api/middleware.ts
-import { NextResponse } from 'next/server';
-import multer from 'multer';
-import { NextApiRequest, NextApiResponse } from 'next';
+import { NextApiRequest, NextApiResponse } from "next";
+import nextConnect from "next-connect"; // ✅ Correct import for next-connect v0.12.2
+import multer from "multer";
 
+// ✅ Configure Multer storage
 const upload = multer({
-  storage: multer.memoryStorage(), // หรือ CloudinaryStorage
-  limits: { fileSize: 5 * 1024 * 1024 }, // ขนาดสูงสุด 5MB
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // Max size 5MB
 });
 
-// Middleware สำหรับการอัปโหลด
-export function middleware(req: NextApiRequest, res: NextApiResponse) {
-  return new Promise((resolve, reject) => {
-    upload.array('pictures', 5)(req, res, (err) => {
-      if (err) {
-        return reject(err);
-      } else {
-        resolve(NextResponse.next());
-      }
-    });
-  });
-}
+// ✅ Multer Middleware using `next-connect`
+const uploadMiddleware = nextConnect<NextApiRequest, NextApiResponse>({
+  onError(error, req, res) {
+    res.status(500).json({ error: `Upload error: ${(error as Error).message}` });
+  },
+  onNoMatch(req, res) {
+    res.status(405).json({ error: `Method ${req.method} Not Allowed` });
+  },
+}).use(upload.array("pictures", 5));
+
+export default uploadMiddleware;
