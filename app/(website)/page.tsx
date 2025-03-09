@@ -34,7 +34,7 @@ export default function Home() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await fetch("/api/productGet"); // เส้นทางสำหรับ API ของคุณ
+        const response = await fetch("/api/ProductGet"); // เส้นทางสำหรับ API ของคุณ
         if (!response.ok) {
           throw new Error("Network response was not ok");
         }
