@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import { useForm } from "react-hook-form";
 import Image from "next/image";
+import { useRouter } from 'next/navigation';
 
 interface ProductFormData {
   name: string;
@@ -18,6 +19,7 @@ const ProductUpload: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [previewImages, setPreviewImages] = useState<string[]>([]); // ✅ แสดงรูป Preview
+  const router = useRouter();
 
   // ✅ อัปเดต `pictures` ให้เป็น Array ที่ `react-hook-form` เข้าใจ
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -77,6 +79,7 @@ const ProductUpload: React.FC = () => {
       });
 
       setMessage("✅ อัปโหลดสินค้าสำเร็จ!");
+      router.push('/');
       setPreviewImages([]); // ✅ ล้างภาพตัวอย่างเมื่ออัปโหลดสำเร็จ
       reset();
     } catch (error) {
@@ -167,7 +170,7 @@ const ProductUpload: React.FC = () => {
             <div className="flex gap-2 mt-2 flex-wrap">
               {previewImages.map((src, index) => (
                 <div key={index} className="relative">
-                  <Image src={src} alt={`preview-${index}`} className="w-16 h-16 object-cover rounded" />
+                  <Image src={src} alt={`preview-${index}`} width={300} height={200} className="w-16 h-16 object-cover rounded" />
                   <button
                     type="button"
                     onClick={() => handleRemoveImage(index)}

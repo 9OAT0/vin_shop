@@ -116,7 +116,7 @@ export default function LoginPage() {
         </div>
         <div>
           <Footer />
-          <Image src="/Rectangle 276.png" alt="" className="w-full h-[40px]"/>
+          <Image src="/Rectangle 276.png" width={300} height={200} alt="" className="w-full h-[40px]"/>
         </div>
       </div>
     </>

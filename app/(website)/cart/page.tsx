@@ -251,6 +251,8 @@ export default function CartPage() {
                     <Image
                       src={item.firstPicture}
                       alt={item.productName}
+                      width={300}
+                      height={200}
                       className="w-16 h-16 object-cover mr-4"
                     />
                     <div>{item.productName}</div>
@@ -291,6 +293,8 @@ export default function CartPage() {
                         src={paymentData.paymentLink}
                         alt="QR Code"
                         className="mt-4"
+                        width={300}
+                        height={200}
                       /> // แสดง QR Code
                     )}
                   <div>
@@ -330,7 +334,7 @@ export default function CartPage() {
               </Link>
             </div>
           </div>
-          <Image src="/Rectangle 271.png" alt="Banner" className="w-full h-12" />
+          <Image src="/Rectangle 271.png" width={300} height={200} alt="Banner" className="w-full h-12" />
         </div>
         <Footer />
       </div>

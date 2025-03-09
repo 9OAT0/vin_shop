@@ -39,7 +39,7 @@ interface Report {
 
 const Dashboard: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<Order[] | null>(null);
   const [report, setReport] = useState<Report>({
     dailySummary: [],
     statusSummary: [],
@@ -51,11 +51,12 @@ const Dashboard: React.FC = () => {
 
   // Fetch all products
   const fetchOrders = async () => {
+    console.log("📡 Fetching orders..."); // เช็คว่าฟังก์ชันถูกเรียกไหม
     try {
       const token = localStorage.getItem("token");
   
       if (!token) {
-        console.error("❌ Token not found in localStorage");
+        console.error("❌ Token not found");
         alert("❌ กรุณาเข้าสู่ระบบใหม่");
         return;
       }
@@ -64,22 +65,22 @@ const Dashboard: React.FC = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
   
-      // Assuming response.data is the structure you're expecting
-      const data = response.data as { orders: Order[] };
-      setOrders(data.orders);
+      const data = response.data;
   
-    } catch (error: unknown) {
-      // TypeScript now expects you to handle `unknown` type errors safely
-      if (error instanceof Error) {
-        // General error handling
-        console.error("❌ Unexpected error:", error.message);
-        alert(`❌ Unexpected error: ${error.message}`);
+      console.log("📡 Orders Received:", data); // 🔍 ตรวจสอบค่าที่ API ส่งมา
+  
+      if (Array.isArray(data)) {
+        setOrders(data); // ✅ ถ้าเป็น Array ให้กำหนดค่า
       } else {
-        // For cases when the error is not an instance of Error
-        console.error("❌ An unknown error occurred", error);
+        console.error("❌ Orders is not an array:", data);
+        setOrders([]); // ❌ ป้องกัน undefined
       }
+    } catch (error) {
+      console.error("❌ Error fetching orders:", error);
+      setOrders([]); // ✅ ถ้ามี error ให้ตั้งค่าเป็น []
     }
   };
+  
 
   const fetchProducts = async () => {
     try {
@@ -89,8 +90,6 @@ const Dashboard: React.FC = () => {
       console.error("Error fetching products:", err);
     }
   };
-
-  
 
   // Fetch report
   const fetchReport = async () => {
@@ -232,26 +231,40 @@ const Dashboard: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {orders.map((order) => (
-              <tr key={order.id} className="border border-gray-300">
-                <td className="border border-gray-300 p-2">{order.id}</td>
-                <td className="border border-gray-300 p-2">{order.status}</td>
-                <td className="border border-gray-300 p-2">
-                  {order.trackingId || "N/A"}
-                </td>
-                <td className="border border-gray-300 p-2">
-                  {new Date(order.createdAt).toLocaleString()}
-                </td>
-                <td className="border border-gray-300 p-2">
-                  <button
-                    onClick={() => openEditModal(order)}
-                    className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
-                  >
-                    ✏️ แก้ไข
-                  </button>
+            {orders === null ? (
+              <tr>
+                <td colSpan={5} className="text-center p-4">
+                  ⏳ กำลังโหลดข้อมูล...
                 </td>
               </tr>
-            ))}
+            ) : orders.length > 0 ? (
+              orders.map((order) => (
+                <tr key={order.id} className="border border-gray-300">
+                  <td className="border border-gray-300 p-2">{order.id}</td>
+                  <td className="border border-gray-300 p-2">{order.status}</td>
+                  <td className="border border-gray-300 p-2">
+                    {order.trackingId || "N/A"}
+                  </td>
+                  <td className="border border-gray-300 p-2">
+                    {new Date(order.createdAt).toLocaleString()}
+                  </td>
+                  <td className="border border-gray-300 p-2">
+                    <button
+                      onClick={() => openEditModal(order)}
+                      className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
+                    >
+                      ✏️ แก้ไข
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={5} className="text-center p-4">
+                  ❌ ไม่มีคำสั่งซื้อ
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </section>
