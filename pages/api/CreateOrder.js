@@ -1,103 +1,64 @@
-import multer from 'multer';
-import { CloudinaryStorage } from 'multer-storage-cloudinary';
-import { cloudinary } from "./CouldinaryConfig";
 import { PrismaClient } from '@prisma/client';
-import { authenticateToken } from './auth';
-
 const prisma = new PrismaClient();
 
-const storage = new CloudinaryStorage({
-  cloudinary,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  params: async (req, _file) => { // ✅ No TypeScript types needed
-    const { name } = req.body;
-    const timestamp = Date.now();
-    return {
-      folder: "paymentSlip",
-      allowedFormats: ["jpg", "png", "jpeg"], // ✅ Fixed key name
-      public_id: `${name}_${timestamp}`,
-    };
-  },
-});
-
-
-const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
-});
-
 export const config = {
-  api: {
-    bodyParser: false,
-  },
-}; 
+  api: { bodyParser: false }, // ✅ Multer ต้องการ bodyParser: false
+};
 
 export default async function handler(req, res) {
-  await authenticateToken(req, res, async () => {
-  if (req.method === 'POST') {
-    upload.single('paymentSlip')(req, res, async (err) => {
-      if(err) {
-        return res.status(500).json({error: 'Error uploading file', details: err.message });
-      }
-  
-    const { userId } = req.body; // ดึง userId จากร่างคำขอ
-    const paymentSlip = req.file ? req.file.path : null;
+  if (req.method !== 'POST') {
+    res.setHeader('Allow', ['POST']);
+    return res.status(405).end(`Method ${req.method} Not Allowed`);
+  }
 
-    try {
-      // ดึงข้อมูล User, รวมถึงที่อยู่ (address) และ Cart
-      const user = await prisma.users.findUnique({
-        where: { id: userId },
-        include: {
-          cart: {
-            include: {
-              products: {
-                include: {
-                  product: true, // รวมข้อมูลผลิตภัณฑ์
-                },
-              },
+  const userId = req.headers['x-user-id'];
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const userRole = req.headers['x-user-role'];
+  const paymentSlip = req.files?.[0]?.path || null; // ✅ Multer ทำ upload ให้แล้ว
+
+  try {
+    const user = await prisma.users.findUnique({
+      where: { id: userId },
+      include: {
+        cart: {
+          include: {
+            products: {
+              include: { product: true },
             },
           },
         },
-      });
+      },
+    });
 
-      // ตรวจสอบว่าผู้ใช้มี Cart และ Cart มีสินค้า
-      if (!user || !user.cart || user.cart.products.length === 0) {
-        return res.status(400).json({ error: 'Cart is empty or user not found' });
-      }
-
-      // สร้างคำสั่งซื้อสำหรับแต่ละสินค้า
-      const orders = await Promise.all(
-        user.cart.products.map(({ productId, product }) =>
-          prisma.order.create({
-            data: {
-              productId,
-              userId,
-              picture: product.pictures[0] || null, // เพิ่มรูปภาพลงในคำสั่งซื้อ
-              paymentSlip: paymentSlip || null,
-              address: user.location, // เพิ่มที่อยู่จาก User
-              status: 'Pending', // สถานะคำสั่งซื้อเริ่มต้น
-              trackingId: `TH${Math.floor(Math.random() * 1000000000)}`, // สร้าง Tracking ID แบบสุ่ม
-            },
-          })
-        )
-      );
-
-      // ลบสินค้าจาก Cart
-      await prisma.cartProduct.deleteMany({
-        where: {
-          cartId: user.cart.id,
-        },
-      });
-
-      res.status(201).json({ orders }); // ส่งข้อมูลคำสั่งซื้อกลับ
-    } catch (error) {
-      console.error('Error creating order:', error);
-      res.status(500).json({ error: 'Error creating order', details: error.message });
+    if (!user || !user.cart || user.cart.products.length === 0) {
+      return res.status(400).json({ error: 'Cart is empty or user not found' });
     }
-  });
-  } else {
-    res.setHeader('Allow', ['POST']);
-    res.status(405).end(`Method ${req.method} Not Allowed`);
+
+    // ✅ สร้าง Order สำหรับแต่ละสินค้าใน Cart
+    const orders = await Promise.all(
+      user.cart.products.map(({ productId, product }) =>
+        prisma.order.create({
+          data: {
+            productId,
+            userId,
+            picture: product.pictures[0] || null,
+            paymentSlip,
+            address: user.location,
+            status: 'Pending',
+            trackingId: `TH${Math.floor(Math.random() * 1_000_000_000)}`,
+          },
+        })
+      )
+    );
+
+    // ✅ ล้าง Cart หลังสั่งซื้อเสร็จ
+    await prisma.cartProduct.deleteMany({
+      where: { cartId: user.cart.id },
+    });
+
+    res.status(201).json({ orders });
+  } catch (error) {
+    console.error('Error creating order:', error);
+    res.status(500).json({ error: 'Error creating order', details: error.message });
   }
-  });
 }

@@ -1,30 +1,26 @@
 import { PrismaClient } from '@prisma/client';
-import { authenticateToken } from '../auth';
-
-
 const prisma = new PrismaClient();
 
 export default async function handler(req, res) {
-  await authenticateToken(req, res, async() => {
+  const userId = req.headers['x-user-id']; // ✅ จาก Global Middleware
+  const userRole = req.headers['x-user-role'];
   const {
-    query: { id }, // userId ที่มาจาก query params
+    query: { id }, // 🆔 userId จาก URL param
   } = req;
 
   if (req.method === 'GET') {
-    if (!id) {
-      return res.status(400).json({ error: 'User ID is required.' });
+    // ✅ ตรวจสอบสิทธิ์: USER ดูได้เฉพาะของตัวเอง
+    if (userRole === 'USER' && id !== userId) {
+      return res.status(403).json({ error: 'Access denied. You can only view your own cart.' });
     }
 
     try {
-      // ค้นหา cart ตาม userId
       const cart = await prisma.cart.findUnique({
-        where: {
-          userId: id,
-        },
+        where: { userId: id },
         include: {
           products: {
             include: {
-              product: true, // ดึงข้อมูลผลิตภัณฑ์ที่เชื่อมโยง
+              product: true,
             },
           },
         },
@@ -34,30 +30,25 @@ export default async function handler(req, res) {
         return res.status(404).json({ error: 'Cart not found for this user.' });
       }
 
-      // คำนวณจำนวนเงินทั้งหมด
       const totalAmount = cart.products.reduce((acc, cp) => {
-        return acc + (cp.product.price || 0); // ค่าเริ่มต้นเป็น 0 หากราคาเป็น null
+        return acc + (cp.product.price || 0);
       }, 0);
-      
-      // สร้างลิงก์ชำระเงิน
-      const paymentLink = createPaymentLink(totalAmount); // คุณสามารถสร้างฟังก์ชันนี้ได้เอง
+
+      const paymentLink = createPaymentLink(totalAmount);
 
       res.status(200).json({ totalAmount, paymentLink });
     } catch (error) {
-      console.error('Error fetching cart:', error.message);
+      console.error('Error fetching cart:', error);
       res.status(500).json({ error: 'Error fetching cart', details: error.message });
-    } finally {
-      await prisma.$disconnect(); // ปิดการเชื่อมต่อ
     }
   } else {
-    res.status(405).json({ error: 'Method Not Allowed' });
+    res.setHeader('Allow', ['GET']);
+    res.status(405).end(`Method ${req.method} Not Allowed`);
   }
-});
 }
 
-// ฟังก์ชันสำหรับสร้างลิงก์ชำระเงิน PromptPay
+// ✅ ฟังก์ชันสร้างลิงก์ PromptPay
 function createPaymentLink(amount) {
-  // คุณจะต้องใช้ข้อมูลที่สำคัญในการสร้างลิงก์เช่นเบอร์โทรศัพท์หรือหมายเลข PromptPay
-  const promptPayNumber = "0943691074"; // เติมหมายเลข PromptPay ที่เกี่ยวข้อง
+  const promptPayNumber = "0943691074"; // PromptPay ของร้านค้า
   return `https://promptpay.io/${promptPayNumber}/${amount}`;
 }
