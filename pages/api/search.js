@@ -1,5 +1,4 @@
 import { PrismaClient } from '@prisma/client';
-import { authenticateToken } from './auth'; // นำเข้า middleware
 
 const prisma = new PrismaClient();
 
