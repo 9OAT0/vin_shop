@@ -1,24 +1,31 @@
+// pages/api/checkCart.js
 import { PrismaClient } from '@prisma/client';
+import { authenticateToken } from './auth';
+
 const prisma = new PrismaClient();
 
 export default async function handler(req, res) {
-    if (req.method !== 'GET') {
-        res.setHeader('Allow', ['GET']);
-        return res.status(405).end(`Method ${req.method} Not Allowed`);
-    }
-
-    const userId = req.headers['x-user-id'];
+  await authenticateToken(req, res, async() => {
+  if (req.method === 'GET') {
+    const { userId } = req.query;
 
     try {
-        const cartItems = await prisma.cartProduct.findMany({
-            where: {
-                cart: { userId },
-            },
-        });
+      const cartItems = await prisma.cartProduct.findMany({
+        where: {
+          cart: {
+            userId: userId,
+          },
+        },
+      });
 
-        return res.status(200).json(cartItems);
+      res.status(200).json(cartItems);
     } catch (error) {
-        console.error('Error fetching cart items:', error.message);
-        return res.status(500).json({ error: 'Error fetching cart items' });
+      console.error(error);
+      res.status(500).json({ error: 'Error fetching cart items' });
     }
+  } else {
+    res.setHeader('Allow', ['GET']);
+    res.status(405).end(`Method ${req.method} Not Allowed`);
+  }
+});
 }
