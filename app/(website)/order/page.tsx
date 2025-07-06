@@ -59,14 +59,14 @@ export default function OrderPage() {
             try {
                 console.log("🚀 Fetching orders for userId:", userId);
                 console.log("🛠️ Sending Token in Header:", token);
-                const response = await axios.get(`/api/getOrders?userId=${userId}`, {
+                const response = await axios.get<Order[]>(`/api/getOrders?userId=${userId}`, {
                     headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
+                      "Content-Type": "application/json",
+                      Authorization: `Bearer ${token}`,
                     },
-                });
-                console.log("✅ Orders from API:", response.data);
-                setOrders(response.data);
+                  });
+                  setOrders(response.data); // ✅ Now TypeScript knows `response.data` is an array of `Order`
+                  
             } catch (err) {
                 console.error("❌ Error fetching orders:", err);
                 setError("Error fetching orders. Please try again.");

@@ -1,14 +1,18 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @next/next/no-html-link-for-pages */
 import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 import axios from "axios";
 
 interface Product {
     pictures: string[];
-    imageUrl: string | undefined;
     id: number;
     name: string;
 }
 
 export default function ComponentsNavbar() {
+    const router = useRouter();
     const [searchTerm, setSearchTerm] = useState('');
     const [suggestions, setSuggestions] = useState<Product[]>([]);
     const [showSearchBar, setShowSearchBar] = useState(false);
@@ -16,32 +20,36 @@ export default function ComponentsNavbar() {
     const [loading, setLoading] = useState(false);
     const [totalProducts, setTotalProducts] = useState(0);
     const [userName, setUserName] = useState<string | null>(null);
-    const [userId, setUserId] = useState<string | null>(null); 
+    const [userId, setUserId] = useState<string | null>(null);
     const [role, setRole] = useState<string | null>(null);
+    const [isAuthenticated, setIsAuthenticated] = useState(false); // ✅ เช็คว่าผู้ใช้ล็อกอินหรือไม่
 
-    // ดึงค่า localStorage บนไคลเอนต์
+    // ดึงค่า localStorage และตรวจสอบว่าผู้ใช้ล็อกอินหรือไม่
     useEffect(() => {
         if (typeof window !== "undefined") {
-            const storedRole = localStorage.getItem("role")?.toLowerCase() ?? null; // ✅ ใช้ ?? null แก้ปัญหา type
-            console.log("🔍 Role from localStorage (Navbar):", storedRole); // ✅ Debug
+            const storedUserId = localStorage.getItem("userId");
+            const storedRole = localStorage.getItem("role");
+            const storedUserName = localStorage.getItem("Username");
 
-            setUserId(localStorage.getItem("username") ?? null);
-            setUserName(localStorage.getItem("Username") ?? null);
+            setUserId(storedUserId);
+            setUserName(storedUserName);
             setRole(storedRole);
+            setIsAuthenticated(!!storedUserId && !!storedRole); // ✅ อัปเดตสถานะล็อกอิน
         }
     }, []);
-    
-
-    
 
     // ฟังก์ชันดึงข้อมูลตะกร้าสินค้า
     const fetchCartDetails = async () => {
         if (!userId) return;
         try {
-            const response = await axios.get(`/api/cart`, { params: { userId } });
-            setTotalProducts(response.data.totalProducts);
+            const response = await axios.get<{ totalProducts: number }>(`/api/getCartDetails`, {
+                params: { userId }
+              });
+              setTotalProducts(response.data.totalProducts || 0);
+              
         } catch (error) {
-            console.error("Error fetching cart details:", error);
+            console.error("❌ Error fetching cart details:", error);
+            setTotalProducts(0);
         }
     };
 
@@ -49,11 +57,13 @@ export default function ComponentsNavbar() {
         if (userId) {
             fetchCartDetails();
         }
-    }, [userId]);
+    }, [fetchCartDetails, userId]);
 
-    // Debounce function สำหรับ search
+    // ฟังก์ชัน debounce สำหรับ search
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const debounce = (func: (...args: any) => void, wait: number) => {
         let timeout: NodeJS.Timeout;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return (...args: any) => {
             clearTimeout(timeout);
             timeout = setTimeout(() => {
@@ -69,7 +79,7 @@ export default function ComponentsNavbar() {
             return;
         }
 
-        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null; 
+        const token = localStorage.getItem('token');
         if (!token) {
             console.error("No token found. Please log in.");
             setSuggestions([]);
@@ -78,11 +88,12 @@ export default function ComponentsNavbar() {
 
         setLoading(true);
         try {
-            const response = await axios.get('/api/search', {
-                headers: { Authorization: `Bearer ${token}` },
-                params: { name: term },
-            });
-            setSuggestions(response.data);
+            const response = await axios.get<Product[]>('/api/search', { 
+                headers: { Authorization: `Bearer ${token}` }, 
+                params: { name: term } 
+              });
+              setSuggestions(response.data);
+              
         } catch (error) {
             console.error("Error fetching suggestions:", error);
             setSuggestions([]);
@@ -100,58 +111,40 @@ export default function ComponentsNavbar() {
         debouncedUpdateSuggestions(term);
     };
 
-    // ปิด Search Bar
-    const closeSearchBar = () => {
-        setShowSearchBar(false);
-        setSearchTerm('');
+    // ✅ ฟังก์ชันไปที่หน้ารายละเอียดสินค้าแบบ dynamic route
+    const handleSelectProduct = (product: Product) => {
+        setSearchTerm(product.name);
         setSuggestions([]);
+        router.push(`/product/${product.id}`);
     };
 
-    // ปิด Search Bar เมื่อคลิกนอกกล่องค้นหา
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (searchBarRef.current && !searchBarRef.current.contains(event.target as Node)) {
-                closeSearchBar();
-            }
-        };
-
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => {
-            document.removeEventListener("mousedown", handleClickOutside);
-        };
-    }, []);
-
-    // ฟังก์ชัน Logout
+    // ✅ ฟังก์ชัน Logout
     const handleLogout = () => {
         localStorage.removeItem("token");
-        localStorage.removeItem("username");
-        setUserName(null);  // ✅ รีเซ็ตค่า userName
-        setUserId(null);  // ✅ รีเซ็ต userId
-        setTotalProducts(0); // ✅ รีเซ็ตจำนวนสินค้าในตะกร้า
+        localStorage.removeItem("Username");
+        localStorage.removeItem("role");
+        localStorage.removeItem("userId");
+        setUserName(null);
+        setUserId(null);
+        setRole(null);
+        setIsAuthenticated(false);
+        setTotalProducts(0);
 
-        // ✅ ใช้ setTimeout เพื่อให้ React อัปเดต UI ก่อนเปลี่ยนหน้า
         setTimeout(() => {
-            window.location.href = "/login"; // ✅ ยังคงใช้ window.location.href เหมือนเดิม
+            router.push("/login");
         }, 100);
     };
-    
 
     return (
         <div className="w-full h-[40px] bg-white flex justify-between items-center px-5 border-black border-[1px]">
-            <a href="/"><div className="text-black"><h1>VIN_SHOP</h1></div></a>
+            <a href="/"><h1 className="text-black">VIN_SHOP</h1></a>
             <div className="text-black flex justify-center items-center gap-10 pl-[350px]">
                 <a href="/shopall"><h1 className="hover:border-b-2 hover:border-black">SHOP ALL</h1></a>
-                <a href="/adr"><h1 className="hover:border-b-2 hover:border-black">Ad Your Adress</h1></a>
+                <a href="/adr"><h1 className="hover:border-b-2 hover:border-black">Add Your Address</h1></a>
             </div>
             <div className="flex items-center gap-4 text-black"> 
-                {userName ? (
-                    <h1>{userName}</h1>
-                ) : (
-                    <a href="/login"><h1 className="font-bold hover:border-b-2 hover:border-black">LOGIN</h1></a>
-                )}
-                <button onClick={() => setShowSearchBar(!showSearchBar)} className="hover:border-b-2 hover:border-black">
-                    {showSearchBar ? "" : "SEARCH"}
-                </button>
+                {userName ? <h1>{userName}</h1> : <a href="/login" className="hover:border-b-2 hover:border-black">LOGIN</a>}
+                <button onClick={() => setShowSearchBar(!showSearchBar)} className="hover:border-b-2 hover:border-black">SEARCH</button>
                 {showSearchBar && (
                     <div className="relative flex gap-2" ref={searchBarRef}>
                         <input 
@@ -159,25 +152,22 @@ export default function ComponentsNavbar() {
                             placeholder="Search..." 
                             value={searchTerm}
                             onChange={handleChange}
-                            className="border border-gray-300 rounded pl-2 h-8 hover:border-b-2 hover:border-black" 
+                            className="border border-gray-300 rounded pl-2 h-8" 
                         />
                         {loading && <div className="loader">Loading...</div>}
                         {suggestions.length > 0 && (
-                            <div className="absolute z-4 mt-9 w-full bg-white border border-black rounded-md shadow-lg max-h-64 overflow-y-auto">
+                            <div className="absolute z-10 mt-9 bg-white border border-black rounded-md shadow-lg max-h-64 overflow-y-auto">
                                 {suggestions.map((product) => (
                                     <div 
                                         key={product.id}
-                                        className="p-2 hover:bg-gray-200 cursor-pointer text-black"
-                                        onClick={() => {
-                                            setSearchTerm(product.name);
-                                            setSuggestions([]);
-                                        }}
+                                        className="p-2 hover:bg-gray-200 cursor-pointer"
+                                        onClick={() => handleSelectProduct(product)}
                                     >
                                         <div className="flex items-center gap-4">
-                                            <img 
+                                            <Image 
                                                 src={product.pictures[0] || '/default.jpg'} 
                                                 alt={product.name} 
-                                                className="w-8 h-8 mr-2 rounded" 
+                                                className="w-8 h-8 rounded" 
                                             />
                                             {product.name}
                                         </div>
@@ -187,16 +177,19 @@ export default function ComponentsNavbar() {
                         )}
                     </div>
                 )}
-                <a href="/cart"><h1 className="hover:border-b-2 hover:border-black">CART ({totalProducts})</h1></a>
-                {/* ✅ เปลี่ยน `Your Order` เป็น `Dashboard` ถ้า role เป็น `admin` */}
-                {role === "admin" ? (
-                    <a href="/dashBord" className="hover:border-b-2 hover:border-black">DASHBOARD</a>
-                ) : (
-                    <a href="/order" className="hover:border-b-2 hover:border-black">YOUR ORDER</a>
+                {isAuthenticated && (
+                    <div className="flex items-center gap-4 text-black">
+                        <a href="/cart"><h1 className="hover:border-b-2 hover:border-black">CART ({totalProducts})</h1></a>
+                        {role === "ADMIN" ? (
+                            <a href="/dashBord" className="hover:border-b-2 hover:border-black">DASHBOARD</a>
+                        ) : (
+                            <a href="/order" className="hover:border-b-2 hover:border-black">YOUR ORDER</a>
+                        )}
+                        <button className="hover:border-b-2 hover:border-black" onClick={handleLogout}>
+                            LOGOUT
+                        </button>
+                    </div>
                 )}
-                <button className="hover:border-b-2 hover:border-black" onClick={handleLogout}>
-                    LOGOUT
-                </button>
             </div>
         </div>
     );

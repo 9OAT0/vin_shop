@@ -1,10 +1,13 @@
+/* eslint-disable @next/next/no-html-link-for-pages */
 'use client';
 
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import React, { useState } from 'react';
+import Link from "next/link";
 
 // กำหนดประเภทข้อผิดพลาด (ถ้าต้องการ)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 type AppError = {
     message: string;
 };
@@ -67,7 +70,7 @@ const Receipt = () => {
             </div>
             <div className="text-black flex justify-center items-center py-4">
                 <div className="text-xl">
-                    <a href="/">ปิด</a>
+                    <Link href="/">ปิด</Link>
                 </div>
             </div>
         </>

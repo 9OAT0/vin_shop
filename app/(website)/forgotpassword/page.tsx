@@ -3,6 +3,7 @@
 import Footer from "../components/Footer";
 import Navbar from "../components/Navbar";
 import React, { useState } from 'react';
+import Image from "next/image";
 
 export default function ForgotpasswordPage() {
     const [email, setEmail] = useState('');
@@ -73,7 +74,7 @@ export default function ForgotpasswordPage() {
                 </div>
                 <div>
                     <Footer />
-                    <img src="/Rectangle 276.png" alt="" className="w-full h-[40px]" />
+                    <Image src="/Rectangle 276.png" alt="" className="w-full h-[40px]" />
                 </div>
             </div>
         </>

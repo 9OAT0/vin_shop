@@ -1,15 +1,17 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import ProductCard from './components/ProductCard';
-import AnotherProductCard from './components/AnotherProductCard';
+import React, { useEffect, useState } from "react";
+import ProductCard from "./components/ProductCard";
+import AnotherProductCard from "./components/AnotherProductCard";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
-import SlidingTextBanner from './components/SlidingTextBanner';
-import Link from 'next/link';
+import SlidingTextBanner from "./components/SlidingTextBanner";
+import Link from "next/link";
+import Image from "next/image";
 
-interface Product { // กำหนดประเภทของผลิตภัณฑ์
-  id: number; 
+interface Product {
+  // กำหนดประเภทของผลิตภัณฑ์
+  id: number;
   pictures: string[];
   name: string;
   price: string | number; // ยอมรับเป็น string หรือ number
@@ -17,7 +19,12 @@ interface Product { // กำหนดประเภทของผลิตภ
 }
 
 const anotherProducts = [
-  { imageSrc: "/image4.png", title: "NO DRUNK AND DRIVE", date: "21 November 2024", info: "READ MORE" },
+  {
+    imageSrc: "/image4.png",
+    title: "NO DRUNK AND DRIVE",
+    date: "21 November 2024",
+    info: "READ MORE",
+  },
   // ข้อมูลอื่น ๆ ตามที่คุณต้องการ
 ];
 
@@ -27,14 +34,14 @@ export default function Home() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await fetch('/api/productGet'); // เส้นทางสำหรับ API ของคุณ
+        const response = await fetch("/api/ProductGet"); // เส้นทางสำหรับ API ของคุณ
         if (!response.ok) {
-          throw new Error('Network response was not ok');
+          throw new Error("Network response was not ok");
         }
         const data: Product[] = await response.json();
         setProducts(data);
       } catch (error) {
-        console.error('Error fetching products:', error);
+        console.error("Error fetching products:", error);
       }
     };
 
@@ -43,7 +50,7 @@ export default function Home() {
 
   return (
     <>
-      <div className='min-h-screen'>
+      <div className="min-h-screen">
         <SlidingTextBanner
           texts={[
             "Welcome to Our Store!",
@@ -56,26 +63,49 @@ export default function Home() {
         />
         <Navbar />
         <div className="flex">
-          <img src="/Rectangle 268.png" alt="" className="w-full h-full" />
-          <img src="/man.png" alt="" className="w-full h-full" />
+          <Image
+            src="/Rectangle 268.png"
+            alt="Banner"
+            width={500}
+            height={300}
+            className="w-full h-full"
+          />
+          <Image
+            src="/man.png"
+            alt="Man Image"
+            width={500}
+            height={300}
+            className="w-full h-full"
+          />
         </div>
+
         <div className="bg-white w-full h-[100px] flex items-center pl-[20px]">
-          <h1 className="text-black text-[20px] font-bold">OUR RECOMMEND PRODUCT</h1>
+          <h1 className="text-black text-[20px] font-bold">
+            OUR RECOMMEND PRODUCT
+          </h1>
         </div>
         <div className="flex flex-wrap gap-2">
-                    {products.map((product) => (
-                        <Link key={product.id} href={`/buy?id=${product.id}`}>
-                        <ProductCard
-                            imageSrc={product.pictures[0] || '/default.jpg'} 
-                            name={product.name}
-                            price={typeof product.price === 'number' ? product.price.toString() : product.price} 
-                            size={product.size || 'N/A'} 
-                        />
-                        </Link>
-                    ))}
-                </div>
+          {products.map((product) => (
+            <Link key={product.id} href={`/buy?id=${product.id}`}>
+              <ProductCard
+                imageSrc={product.pictures[0] || "/default.jpg"}
+                name={product.name}
+                price={
+                  typeof product.price === "number"
+                    ? product.price.toString()
+                    : product.price
+                }
+                size={product.size || "N/A"}
+              />
+            </Link>
+          ))}
+        </div>
         <div className="bg-white w-full h-[100px] flex justify-start items-center pl-[20px] py-6">
-          <a href="/shopall"><h1 className="text-black text-[20px] font-bold border-b border-black">SHOP ALL</h1></a>
+          <a href="/shopall">
+            <h1 className="text-black text-[20px] font-bold border-b border-black">
+              SHOP ALL
+            </h1>
+          </a>
         </div>
         <div className="flex">
           {anotherProducts.map((product, index) => (
@@ -88,10 +118,28 @@ export default function Home() {
             />
           ))}
         </div>
-        <img src="/img5.png" alt="" className='w-full h-[523px]' />
-        <img src="/Rectangle 271.png" alt="" className='w-full' />
+        <Image
+          src="/img5.png"
+          alt=""
+          width={500}
+          height={300}
+          className="w-full h-[523px]"
+        />
+        <Image
+          src="/Rectangle 271.png"
+          width={500}
+          height={300}
+          alt=""
+          className="w-full"
+        />
         <Footer />
-        <img src="/Rectangle 276.png" alt="" className='w-full' />
+        <Image
+          src="/Rectangle 276.png"
+          width={500}
+          height={300}
+          alt=""
+          className="w-full"
+        />
       </div>
     </>
   );

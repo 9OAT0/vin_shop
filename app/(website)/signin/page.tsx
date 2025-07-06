@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 
 export default function SignUpPage() {
     const [firstName, setFirstName] = useState('');
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');

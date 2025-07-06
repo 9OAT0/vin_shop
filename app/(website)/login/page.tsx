@@ -5,6 +5,7 @@ import Footer from "../components/Footer";
 import Navbar from "../components/Navbar";
 import { useRouter } from 'next/navigation';
 import { HiEye, HiEyeOff } from 'react-icons/hi'; // ใช้ไอคอนจาก react-icons
+import Image from "next/image";
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -42,6 +43,7 @@ export default function LoginPage() {
         localStorage.setItem('role', data.user_role)
         localStorage.setItem('Username', data.user_name)
         router.push('/');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       console.error(err.message);
       setError(
@@ -114,7 +116,7 @@ export default function LoginPage() {
         </div>
         <div>
           <Footer />
-          <img src="/Rectangle 276.png" alt="" className="w-full h-[40px]"/>
+          <Image src="/Rectangle 276.png" width={300} height={200} alt="" className="w-full h-[40px]"/>
         </div>
       </div>
     </>
