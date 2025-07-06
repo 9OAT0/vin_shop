@@ -84,7 +84,7 @@ const Dashboard: React.FC = () => {
 
   const fetchProducts = async () => {
     try {
-      const response = await axios.get<Product[]>("/api/productGet");
+      const response = await axios.get<Product[]>("/api/ProductGet");
       setProducts(response.data);
     } catch (err) {
       console.error("Error fetching products:", err);
