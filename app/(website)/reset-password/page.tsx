@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function ResetpasswordPage() {
@@ -9,9 +9,15 @@ export default function ResetpasswordPage() {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
+    const [token, setToken] = useState<string | null>(null); // ✅ Store token in state
 
-    const query = new URLSearchParams(window.location.search);
-    const token = query.get('token');
+    // ✅ Fetch token from URL in useEffect (runs only on the client)
+    useEffect(() => {
+        if (typeof window !== 'undefined') { // ✅ Ensure code runs only in the browser
+            const query = new URLSearchParams(window.location.search);
+            setToken(query.get('token'));
+        }
+    }, []);
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -37,7 +43,7 @@ export default function ResetpasswordPage() {
 
             const result = await response.json();
             setSuccessMessage(result.message);
-            setNewPassword(''); 
+            setNewPassword('');
             setConfirmPassword('');
 
             setTimeout(() => {
@@ -56,7 +62,7 @@ export default function ResetpasswordPage() {
     return (
         <div className="min-h-screen bg-white flex flex-col justify-center items-center gap-24">
             <form onSubmit={handleSubmit} className="flex flex-col justify-center items-center gap-24">
-                <div className="text-black flex justify-center ">
+                <div className="text-black flex justify-center">
                     <h1 className="text-2xl font-bold">YOUR NEW PASSWORD</h1>
                 </div>
                 <div className="flex flex-col gap-10">

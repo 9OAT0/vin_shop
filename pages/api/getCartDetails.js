@@ -1,100 +1,104 @@
 import { PrismaClient } from '@prisma/client';
+import jwt from 'jsonwebtoken';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const prisma = new PrismaClient();
+const SECRET_KEY = process.env.SECRET_KEY;
 
 export default async function handler(req, res) {
-    if (req.method === 'GET') {
-        const { userId } = req.query;
+  const token = req.cookies?.token;
 
-        if (!userId) {
-            return res.status(400).json({ error: 'User ID is required.' });
-        }
+  if (!token) {
+    return res.status(401).json({ error: 'Not authenticated. Please login first.' });
+  }
 
-        try {
-            // ค้นหาตะกร้าจากผู้ใช้
-            const cart = await prisma.cart.findUnique({
-                where: { userId: userId },
-                include: {
-                    products: true, // รวมผลิตภัณฑ์ในตะกร้า
-                },
-            });
+  let userPayload;
+  try {
+    userPayload = jwt.verify(token, SECRET_KEY);
+  } catch (err) {
+    console.error('❌ Invalid token:', err.message);
+    return res.status(401).json({ error: 'Invalid or expired token.' });
+  }
 
-            if (!cart) {
-                return res.status(404).json({ error: 'Cart not found.' });
-            }
+  const userId = userPayload.id;
 
-            // แปลงข้อมูลผลิตภัณฑ์
-            const productsWithDetails = await Promise.all(cart.products.map(async (cartProduct) => {
-                // ดึงข้อมูลผลิตภัณฑ์จาก Products
-                const product = await prisma.products.findUnique({
-                    where: { id: cartProduct.productId },
-                    select: {
-                        name: true, // ดึงชื่อผลิตภัณฑ์
-                        pictures: true, // ดึงภาพผลิตภัณฑ์
-                    }
-                });
+  if (req.method === 'GET') {
+    try {
+      const cart = await prisma.cart.findUnique({
+        where: { userId },
+        include: {
+          products: {
+            include: { product: true },
+          },
+        },
+      });
 
-                return {
-                    id: cartProduct.id,
-                    cartId: cart.id,
-                    productId: cartProduct.productId,
-                    productName: product?.name || 'Unnamed Product', // ใช้ชื่อจากผลิตภัณฑ์
-                    firstPicture: product?.pictures[0] || null, // ใช้ภาพแรกจากผลิตภัณฑ์
-                };
-            }));
+      if (!cart) {
+        return res.status(404).json({ error: 'Cart not found.' });
+      }
 
-            // รวมจำนวนผลิตภัณฑ์ในตะกร้า
-            const totalProducts = cart.products.length;
+      const productsWithDetails = cart.products.map(cp => ({
+        id: cp.id,
+        productId: cp.productId,
+        productName: cp.product?.name || 'Unnamed Product',
+        firstPicture: cp.product?.pictures[0] || null,
+      }));
 
-            return res.status(200).json({
-                id: cart.id,
-                userId: cart.userId,
-                totalProducts, // เพิ่มข้อมูลจำนวนผลิตภัณฑ์ที่นี่
-                products: productsWithDetails
-            });
-        } catch (error) {
-            console.error('Error fetching cart details:', error);
-            return res.status(500).json({ error: 'Internal Server Error' });
-        }
-    } else if (req.method === 'DELETE') {
-        const { userId, productId } = req.query;
-
-        if (!userId || !productId) {
-            return res.status(400).json({ error: 'User ID and Product ID are required.' });
-        }
-
-        try {
-            // ค้นหาตะกร้าของผู้ใช้
-            const cart = await prisma.cart.findUnique({
-                where: { userId: userId },
-                include: {
-                    products: true, // รวมผลิตภัณฑ์ในตะกร้า
-                },
-            });
-
-            if (!cart) {
-                return res.status(404).json({ error: 'Cart not found.' });
-            }
-
-            // ค้นหาผลิตภัณฑ์ในตะกร้า
-            const cartProduct = cart.products.find(cp => cp.productId === productId);
-
-            if (!cartProduct) {
-                return res.status(404).json({ error: 'Cart product not found.' });
-            }
-
-            // ลบผลิตภัณฑ์จากตะกร้า
-            await prisma.cartProduct.delete({
-                where: { id: cartProduct.id },
-            });
-
-            return res.status(204).end(); // Successfully deleted, return no content
-        } catch (error) {
-            console.error('Error deleting product from cart:', error);
-            return res.status(500).json({ error: 'Internal Server Error' });
-        }
-    } else {
-        res.setHeader('Allow', ['GET', 'DELETE']);
-        return res.status(405).end(`Method ${req.method} Not Allowed`);
+      res.status(200).json({
+        cartId: cart.id,
+        userId: cart.userId,
+        totalProducts: productsWithDetails.length,
+        products: productsWithDetails,
+      });
+    } catch (error) {
+      console.error('❌ Error fetching cart:', error.message);
+      res.status(500).json({ error: 'Internal Server Error', details: error.message });
     }
+  }
+
+  else if (req.method === 'DELETE') {
+    const { productId } = req.body;
+
+    if (!productId) {
+      return res.status(400).json({ error: 'Product ID is required in request body.' });
+    }
+
+    try {
+      const cart = await prisma.cart.findUnique({
+        where: { userId },
+      });
+
+      if (!cart) {
+        return res.status(404).json({ error: 'Cart not found.' });
+      }
+
+      const cartProduct = await prisma.cartProduct.findFirst({
+        where: {
+          cartId: cart.id,
+          productId: productId,
+        },
+      });
+
+      if (!cartProduct) {
+        return res.status(404).json({ error: 'Cart product not found.' });
+      }
+
+      await prisma.cartProduct.delete({
+        where: { id: cartProduct.id },
+      });
+
+      console.log(`✅ Deleted product ${productId} from cart ${cart.id}`);
+      return res.status(204).end();
+    } catch (error) {
+      console.error('❌ Error deleting product from cart:', error.message);
+      res.status(500).json({ error: 'Internal Server Error', details: error.message });
+    }
+  }
+
+  else {
+    res.setHeader('Allow', ['GET', 'DELETE']);
+    return res.status(405).end(`Method ${req.method} Not Allowed`);
+  }
 }

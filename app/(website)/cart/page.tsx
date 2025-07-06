@@ -1,309 +1,87 @@
-"use client";
+import { PrismaClient } from '@prisma/client';
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
-import Link from "next/link";
+const prisma = new PrismaClient();
 
-interface Product {
-  productName: string;
-  id: string;
-  cartId: string;
-  productId: string;
-  firstPicture: string;
-}
+export default async function handler(req, res) {
+  const { userId, productId } = req.query;
 
-interface CartDetails {
-  id: string;
-  userId: string;
-  products: Product[];
-}
+  if (!userId) {
+    return res.status(400).json({ error: 'User ID is required.' });
+  }
 
-export default function CartPage() {
-  const [cartItems, setCartItems] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState<string>("");
-  const [userId, setUserId] = useState<string | null>(null);
-  const [token, setAuthToken] = useState<string | null>(null);
-  const [isOverlayVisible, setOverlayVisible] = useState<boolean>(false);
-  const [paymentAmount, setPaymentAmount] = useState<number | null>(null); // สำหรับจัดเก็บราคา
-  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null); // สำหรับจัดเก็บ URL ของ QR Code
-  const [paymentData, setPaymentData] = useState<any | null>(null); // สำหรับเก็บข้อมูลการชำระเงิน
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
-
-  useEffect(() => {
-    const storedUserId = localStorage.getItem("userId");
-    const storedAuthToken = localStorage.getItem("token");
-
-    setUserId(storedUserId);
-    setAuthToken(storedAuthToken);
-
-    const fetchCartItems = async () => {
-      setLoading(true);
-      try {
-        if (storedUserId && storedAuthToken) {
-          const response = await fetch(
-            `/api/getCartDetails?userId=${storedUserId}`,
-            {
-              method: "GET",
-              headers: {
-                Authorization: `Bearer ${storedAuthToken}`,
-                "Content-Type": "application/json",
-              },
-            }
-          );
-
-          if (response.ok) {
-            const data: CartDetails = await response.json();
-            if (Array.isArray(data.products)) {
-              setCartItems(data.products);
-            } else {
-              setCartItems([]);
-              setErrorMessage("ได้รับข้อมูลที่ไม่ถูกต้องจากเซิร์ฟเวอร์");
-            }
-          } else {
-            setErrorMessage(
-              `ไม่สามารถดึงข้อมูลสินค้าจากตะกร้าได้: ${response.statusText}`
-            );
-          }
-        } else {
-          setErrorMessage("โปรดเข้าสู่ระบบเพื่อดูตะกร้าสินค้า");
-        }
-      } catch (error) {
-        if (error instanceof Error) {
-          setErrorMessage(
-            "เกิดข้อผิดพลาดในการดึงข้อมูลสินค้าจากตะกร้า: " + error.message
-          );
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCartItems();
-  }, []);
-
-  const handleDelete = async (productId: string) => {
-    if (!userId) {
-      console.error("User ID is not available. Please log in again.");
-      return;
-    }
-
+  if (req.method === 'GET') {
     try {
-      const response = await fetch(`/api/getCartDetails?userId=${userId}&productId=${productId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (response.ok) {
-        setCartItems((prevItems) => prevItems.filter((item) => item.productId !== productId));
-        console.log(`Product with ID: ${productId} has been removed from the cart`);
-      } else {
-        const errorData = await response.json();
-        console.error('Error deleting product:', errorData.error);
-      }
-    } catch (error) {
-      console.error("Error during delete:", error.message);
-    }
-  };
-
-  const toggleOverlay = () => {
-    setOverlayVisible(!isOverlayVisible);
-  };
-
-  const handlePayment = async () => {
-    try {
-      const response = await fetch(`/api/payment/${userId}`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Error occurred:", errorData.error);
-        return;
-      }
-
-      const data = await response.json(); // รับข้อมูล JSON
-      setPaymentData(data); // เก็บข้อมูลการชำระเงินลงใน state
-
-      if (data.paymentLink) {
-        setPaymentAmount(data.totalAmount); // ตั้งค่าราคา
-        setQrCodeUrl(data.qrCodeUrl); // if available
-        setOverlayVisible(true); // เปิด Overlay เพื่อแสดงข้อมูลการชำระเงิน
-      } else {
-        console.error("Payment link not found");
-      }
-    } catch (error) {
-      console.error("Error during payment:", error.message);
-    }
-  };
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files ? event.target.files[0] : null;
-    setSelectedImage(file);
-  };
-
-  const handleUpload = async () => {
-    if (!userId) {
-        console.error("User ID is not available. Please log in again.");
-        return;
-    }
-
-    if (selectedImage) {
-        const formData = new FormData();
-        formData.append('paymentSlip', selectedImage); // เพิ่มไฟล์ที่เลือก
-        formData.append('userId', userId); // เพิ่ม userId ที่เก็บไว้ใน state
-
-        try {
-            const response = await fetch('/api/CreateOrder', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    Authorization: `Bearer ${token}`, // ส่ง token ถ้ามีการใช้งาน
+      // ✅ ดึง cart + products + product details ด้วย query เดียว
+      const cart = await prisma.cart.findUnique({
+        where: { userId },
+        include: {
+          products: {
+            include: {
+              product: {
+                select: {
+                  name: true,
+                  pictures: true,
                 },
-            });
+              },
+            },
+          },
+        },
+      });
 
-            if (response.ok) {
-                const responseData = await response.json();
-                console.log('Upload successful:', responseData);
-                // คุณสามารถทำการแสดงผลหรืออัปเดตสถานะหลังการอัพโหลดได้ที่นี่
-            } else {
-                const errorData = await response.json();
-                console.error('Error uploading file:', errorData.error);
-            }
-        } catch (error) {
-            console.error('Error during upload:', error.message);
-        }
-    } else {
-        console.error("No file selected");
+      if (!cart) {
+        return res.status(404).json({ error: 'Cart not found.' });
+      }
+
+      const productsWithDetails = cart.products.map((cartProduct) => ({
+        id: cartProduct.id,
+        cartId: cart.id,
+        productId: cartProduct.productId,
+        productName: cartProduct.product?.name || 'Unnamed Product',
+        firstPicture: cartProduct.product?.pictures[0] || null,
+      }));
+
+      return res.status(200).json({
+        id: cart.id,
+        userId: cart.userId,
+        totalProducts: productsWithDetails.length,
+        products: productsWithDetails,
+      });
+    } catch (error) {
+      console.error('Error fetching cart details:', error);
+      return res.status(500).json({ error: 'Internal Server Error' });
     }
-};
+  }
 
-  return (
-    <>
-      <div className="min-h-screen bg-white text-black">
-        <div className="flex flex-col gap-4">
-          <Navbar />
-          <div className="flex flex-col gap-5">
-            <div className="pl-5">
-              <h1 className="font-semibold text-xl">YOUR CART</h1>
-            </div>
+  else if (req.method === 'DELETE') {
+    if (!productId) {
+      return res.status(400).json({ error: 'Product ID is required for deletion.' });
+    }
 
-            {loading ? (
-              <div className="pl-5">
-                <h2 className="text-[14px]">กำลังโหลด...</h2>
-              </div>
-            ) : errorMessage ? (
-              <div className="pl-5">
-                <h2 className="text-red-600">{errorMessage}</h2>
-              </div>
-            ) : cartItems.length === 0 ? (
-              <div className="pl-5">
-                <h2 className="text-[14px]">ตะกร้าของคุณว่างเปล่า...</h2>
-              </div>
-            ) : (
-              cartItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="px-5 flex items-center justify-between"
-                >
-                  <Link
-                    className="flex items-center cursor-pointer"
-                    href={`/buy?id=${item.productId}`}
-                  >
-                    <img
-                      src={item.firstPicture}
-                      alt={item.productName}
-                      className="w-16 h-16 object-cover mr-4"
-                    />
-                    <div>{item.productName}</div>
-                  </Link>
-                  <button
-                    onClick={() => handleDelete(item.productId)} // ใช้ productId แทน id
-                    className="bg-red-500 text-white px-4 py-2 rounded transition hover:bg-red-600"
-                  >
-                    Delete
-                  </button>
-                </div>
-              ))
-            )}
+    try {
+      const cartProduct = await prisma.cartProduct.findFirst({
+        where: {
+          cart: { userId },
+          productId,
+        },
+      });
 
-            <div className="flex justify-center items-center">
-              <button
-                onClick={handlePayment} // เรียกใช้ handlePayment โดยตรง
-                className="bg-black text-white w-32 h-10 flex justify-center items-center"
-              >
-                Make payment
-              </button>
-            </div>
+      if (!cartProduct) {
+        return res.status(404).json({ error: 'Cart product not found.' });
+      }
 
-            {isOverlayVisible && (
-              <div
-                className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
-                onClick={toggleOverlay}
-              >
-                <div
-                  className="bg-white rounded-lg p-6"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <h2 className="text-lg font-bold">Make Payment</h2>
-                  <p>รายละเอียดชำระเงิน...</p>
-                  {paymentData &&
-                    paymentData.paymentLink && ( // ใช้ paymentData
-                      <img
-                        src={paymentData.paymentLink}
-                        alt="QR Code"
-                        className="mt-4"
-                      /> // แสดง QR Code
-                    )}
-                  <div>
-                    ราคา:{" "}
-                    {paymentAmount
-                      ? `${paymentAmount} บาท`
-                      : "กำลังโหลดราคา..."}{" "}
-                    {/* แสดงราคา */}
-                  </div>
-                  <input 
-                    type="file" 
-                    onChange={handleFileChange} 
-                    className="mt-4" 
-                  />
-                  <div className="flex justify-between">
-                    <button 
-                      onClick={handleUpload} 
-                      className="mt-2 px-4 py-2 bg-blue-500 text-white rounded"
-                    >
-                      Upload Image
-                    </button>
-                    <button
-                        className="mt-2 px-4 py-2 bg-red-500 text-white rounded"
-                        onClick={toggleOverlay} // ปิด Overlay
-                    >
-                        ยกเลิก
-                    </button>
-                  </div>
-                  
-                </div>
-              </div>
-            )}
+      await prisma.cartProduct.delete({
+        where: { id: cartProduct.id },
+      });
 
-            <div className="pl-5">
-              <a href="/" className="border-black border-b">
-                กลับไปช็อปปิ้ง →
-              </a>
-            </div>
-          </div>
-          <img src="/Rectangle 271.png" alt="Banner" className="w-full h-12" />
-        </div>
-        <Footer />
-      </div>
-    </>
-  );
+      return res.status(204).end(); // ✅ No content
+    } catch (error) {
+      console.error('Error deleting product from cart:', error);
+      return res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
+
+  else {
+    res.setHeader('Allow', ['GET', 'DELETE']);
+    return res.status(405).end(`Method ${req.method} Not Allowed`);
+  }
 }

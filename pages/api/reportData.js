@@ -1,122 +1,141 @@
 import { PrismaClient } from '@prisma/client';
-import { authenticateToken } from './auth';
+import jwt from 'jsonwebtoken';
+import dotenv from 'dotenv';
 
+dotenv.config();
 
 const prisma = new PrismaClient();
+const SECRET_KEY = process.env.SECRET_KEY;
 
 export default async function handler(req, res) {
-  await authenticateToken(req, res, async() => {
-  if (req.method === 'GET') {
-    try {
-      const currentDate = new Date();
-      const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-      const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+  if (req.method !== 'GET') {
+    res.setHeader('Allow', ['GET']);
+    return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
+  }
 
-      // Fetch orders for the current month
-      const orders = await prisma.order.findMany({
-        where: {
-          createdAt: {
-            gte: startOfMonth,
-            lte: endOfMonth,
-          },
-        },
-        include: {
-          product: true,
+  const token = req.cookies?.token;
+  if (!token) {
+    return res.status(401).json({ error: 'Not authenticated. Please login as admin.' });
+  }
+
+  let userPayload;
+  try {
+    userPayload = jwt.verify(token, SECRET_KEY);
+  } catch (err) {
+    console.error('❌ Invalid token:', err.message);
+    return res.status(401).json({ error: 'Invalid or expired token.' });
+  }
+
+  if (userPayload.role !== 'ADMIN') {
+    return res.status(403).json({ error: 'Access denied. Only ADMIN can view order summary.' });
+  }
+
+  try {
+    const allOrders = await prisma.order.findMany({
+      include: {
+        product: { select: { name: true, price: true } },
+        user: { select: { id: true, name: true, email: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const totalOrders = allOrders.length;
+    const totalRevenue = allOrders.reduce((sum, o) => sum + (o.product?.price || 0), 0);
+
+    // 🗂 All Time Summary: Group by Status
+    const allTimeStatusSummary = {};
+    allOrders.forEach(order => {
+      const status = order.status;
+      if (!allTimeStatusSummary[status]) {
+        allTimeStatusSummary[status] = { count: 0, revenue: 0, orders: [] };
+      }
+      allTimeStatusSummary[status].count += 1;
+      allTimeStatusSummary[status].revenue += order.product?.price || 0;
+      allTimeStatusSummary[status].orders.push({
+        id: order.id,
+        productName: order.product?.name || 'Unknown',
+        price: order.product?.price || 0,
+        status: order.status,
+        createdAt: order.createdAt,
+        customer: {
+          id: order.user?.id || 'N/A',
+          name: order.user?.name || 'Unknown User',
+          email: order.user?.email || 'N/A',
         },
       });
+    });
 
-      if (!orders || orders.length === 0) {
-        return res.status(200).json({ message: 'No orders found for this month.' });
+    // 📅 Monthly Summary: Group by Month + Status
+    const monthlyStatusSummary = {};
+    allOrders.forEach(order => {
+      const monthKey = order.createdAt.toISOString().slice(0, 7); // YYYY-MM
+      const status = order.status;
+
+      if (!monthlyStatusSummary[monthKey]) {
+        monthlyStatusSummary[monthKey] = {};
+      }
+      if (!monthlyStatusSummary[monthKey][status]) {
+        monthlyStatusSummary[monthKey][status] = { count: 0, revenue: 0, orders: [] };
       }
 
-      const summary = {};
-      const statusSummary = {}; // เก็บข้อมูลแยกตามสถานะออเดอร์
-
-      orders.forEach((order) => {
-        if (!order || !order.createdAt) {
-          console.warn('Order is missing required fields:', order);
-          return;
-        }
-
-        const orderDate = order.createdAt.toISOString().split('T')[0];
-
-        if (!summary[orderDate]) {
-          summary[orderDate] = {
-            date: orderDate,
-            totalItems: 0,
-            products: {},
-          };
-        }
-
-        summary[orderDate].totalItems += 1;
-
-        if (order.productId && order.product) {
-          const productId = order.productId;
-
-          if (!summary[orderDate].products[productId]) {
-            summary[orderDate].products[productId] = {
-              productId: productId,
-              name: order.product.name || 'Unknown Product',
-              quantity: 0,
-            };
-          }
-
-          summary[orderDate].products[productId].quantity += 1;
-        }
-
-        // นับจำนวนคำสั่งซื้อแยกตามสถานะ และรวมข้อมูลสินค้าที่เกี่ยวข้อง
-        if (order.status) {
-          if (!statusSummary[order.status]) {
-            statusSummary[order.status] = {
-              count: 0,
-              products: {},
-            };
-          }
-
-          statusSummary[order.status].count += 1;
-
-          if (order.productId && order.product) {
-            const productId = order.productId;
-
-            if (!statusSummary[order.status].products[productId]) {
-              statusSummary[order.status].products[productId] = {
-                productId: productId,
-                name: order.product.name || 'Unknown Product',
-                quantity: 0,
-              };
-            }
-
-            statusSummary[order.status].products[productId].quantity += 1;
-          }
-        }
+      monthlyStatusSummary[monthKey][status].count += 1;
+      monthlyStatusSummary[monthKey][status].revenue += order.product?.price || 0;
+      monthlyStatusSummary[monthKey][status].orders.push({
+        id: order.id,
+        productName: order.product?.name || 'Unknown',
+        price: order.product?.price || 0,
+        status: order.status,
+        createdAt: order.createdAt,
+        customer: {
+          id: order.user?.id || 'N/A',
+          name: order.user?.name || 'Unknown User',
+          email: order.user?.email || 'N/A',
+        },
       });
+    });
 
-      // เตรียมข้อมูลสำหรับแสดงผล
-      const graphData = Object.entries(statusSummary).map(([status, data]) => ({
-        status,
-        count: data.count,
-        products: Object.values(data.products),
-      }));
+    // 📆 Daily Summary (Today)
+    const todayKey = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const dailyOrders = allOrders.filter(order =>
+      order.createdAt.toISOString().startsWith(todayKey)
+    );
 
-      const result = {
-        dailySummary: Object.values(summary),
-        statusSummary: graphData,
-      };
-
-      return res.status(200).json(result);
-    } catch (error) {
-      console.error('Error fetching orders summary:', error);
-
-      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
-
-      return res.status(500).json({
-        error: 'Error fetching orders summary',
-        details: errorMessage,
+    const dailyStatusSummary = {};
+    dailyOrders.forEach(order => {
+      const status = order.status;
+      if (!dailyStatusSummary[status]) {
+        dailyStatusSummary[status] = { count: 0, revenue: 0, orders: [] };
+      }
+      dailyStatusSummary[status].count += 1;
+      dailyStatusSummary[status].revenue += order.product?.price || 0;
+      dailyStatusSummary[status].orders.push({
+        id: order.id,
+        productName: order.product?.name || 'Unknown',
+        price: order.product?.price || 0,
+        status: order.status,
+        createdAt: order.createdAt,
+        customer: {
+          id: order.user?.id || 'N/A',
+          name: order.user?.name || 'Unknown User',
+          email: order.user?.email || 'N/A',
+        },
       });
-    }
-  } else {
-    res.setHeader('Allow', ['GET']);
-    return res.status(405).end(`Method ${req.method} Not Allowed`);
+    });
+
+    return res.status(200).json({
+      allTime: {
+        totalOrders,
+        totalRevenue,
+        groupedByStatus: allTimeStatusSummary,
+      },
+      monthlySummary: monthlyStatusSummary,
+      todaySummary: dailyStatusSummary,
+    });
+  } catch (error) {
+    console.error('❌ Error fetching order summary:', error);
+    return res.status(500).json({
+      error: 'Error fetching order summary',
+      details: error.message,
+    });
   }
-});
 }

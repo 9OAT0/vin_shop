@@ -21,7 +21,7 @@ export default function ShopallPage() {
     useEffect(() => {
         const fetchProducts = async () => {
             try {
-                const response = await fetch('/api/productGet');
+                const response = await fetch('/api/ProductGet');
                 if (!response.ok) throw new Error('Failed to fetch products');
                 const data = await response.json();
                 setProducts(data);

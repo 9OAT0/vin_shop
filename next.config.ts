@@ -1,7 +1,10 @@
-import type { NextConfig } from 'next';
+import { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-
-  };
-
-export default nextConfig;
+  images: {
+    remotePatterns: [
+      { protocol: 'https', hostname: 'res.cloudinary.com' },
+      { protocol: 'https', hostname: 'promptpay.io' },
+    ],
+  },
+};

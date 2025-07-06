@@ -1,94 +1,103 @@
 import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import bcrypt from "bcrypt"; 
 
 const prisma = new PrismaClient();
+const SECRET_KEY = process.env.JWT_SECRET;
 
-// Middleware ตรวจสอบ JWT Token
-const authenticateToken = async (req, res) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+export default async function handler(req, res) {
+  // ✅ ตรวจ JWT จาก cookie
+  const token = req.cookies?.token;
 
   if (!token) {
-    return res.status(401).json({ error: 'Token required' });
+    return res.status(401).json({ error: 'Not authenticated. Please login.' });
   }
 
+  let userPayload;
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET); 
-    return decoded; 
-  } catch (error) {
-    return res.status(403).json({ error: 'Invalid or expired token' });
+    userPayload = jwt.verify(token, SECRET_KEY);
+  } catch (err) {
+    console.error('❌ Invalid token:', err.message);
+    return res.status(401).json({ error: 'Invalid or expired token.' });
   }
-};
 
-// API Route Handler
-export default async function handler(req, res) {
+  const userId = userPayload.id;
+
   if (req.method === 'GET') {
     try {
-      const userData = await authenticateToken(req, res);
-      if (!userData) return;
-
-      const userId = userData.id; 
-
       const user = await prisma.users.findUnique({
         where: { id: userId },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          location: true,
+          phoneNumber: true,
+        },
       });
 
       if (!user) {
         return res.status(404).json({ error: 'User not found' });
       }
 
-      // ส่งข้อมูลผู้ใช้ไป (เฉพาะฟิลด์ที่ต้องการ)
-      return res.status(200).json({
-        email: user.email,
-        location: user.location,
-        name: user.name,
-        // ไม่ส่งรหัสผ่าน
-      });
+      return res.status(200).json(user);
     } catch (error) {
-      console.error('Error fetching user:', error);
+      console.error('❌ Error fetching user:', error);
       return res.status(500).json({ error: 'Internal server error', details: error.message });
+    } finally {
+      if (process.env.NODE_ENV === 'development') await prisma.$disconnect();
     }
-  } else if (req.method === 'PUT') {
+  }
+
+  else if (req.method === 'PUT') {
+    const { name, email, location, password, phoneNumber } = req.body;
+
     try {
-      const userData = await authenticateToken(req, res);
-      if (!userData) return;
-
-      const userId = userData.id; // ใช้ userId ที่ถอดรหัสได้จาก Token
-      const { name, email, location, password } = req.body; // รับข้อมูลที่ต้องการอัปเดต
-
-      // Data to Update
-      const updatedData = {
-        name,
-        email,
-        location,
-      };
-
-      // ถ้ามีการเปลี่ยนรหัสผ่านก็เข้ารหัสรหัสผ่านใหม่
-      if (password) {
-        const saltRounds = 10;
-        const hashedPassword = await bcrypt.hash(password, saltRounds);
-        updatedData.password = hashedPassword; // อัปเดตรหัสผ่าน
+      // ✅ ตรวจสอบ email ซ้ำ (แต่ยกเว้น email ของตัวเอง)
+      if (email) {
+        const existing = await prisma.users.findFirst({
+          where: { email, NOT: { id: userId } },
+        });
+        if (existing) {
+          return res.status(409).json({ error: 'This email is already in use by another user.' });
+        }
       }
 
-      const user = await prisma.users.update({
+      const updatedData = {};
+      if (name) updatedData.name = name;
+      if (email) updatedData.email = email;
+      if (location) updatedData.location = location;
+      if (phoneNumber) updatedData.phoneNumber = phoneNumber;
+
+      if (password) {
+        updatedData.password = await bcrypt.hash(password, 10);
+      }
+
+      const updatedUser = await prisma.users.update({
         where: { id: userId },
         data: updatedData,
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          location: true,
+          phoneNumber: true,
+          updatedAt: true,
+        },
       });
 
-      // ส่งข้อมูลผู้ใช้ที่อัปเดต
-      return res.status(200).json({
-        email: user.email,
-        location: user.location,
-        name: user.name,
-        // ไม่ส่งรหัสผ่าน
-      });
+      console.log(`✅ User updated: ${updatedUser.id}`);
+      return res.status(200).json(updatedUser);
     } catch (error) {
-      console.error('Error updating user:', error);
+      console.error('❌ Error updating user:', error);
       return res.status(500).json({ error: 'Internal server error', details: error.message });
+    } finally {
+      if (process.env.NODE_ENV === 'development') await prisma.$disconnect();
     }
-  } else {
+  }
+
+  else {
     res.setHeader('Allow', ['GET', 'PUT']);
-    return res.status(405).end(`Method ${req.method} Not Allowed`);
+    return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
   }
 }
