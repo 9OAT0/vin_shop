@@ -71,7 +71,7 @@ const ProductUpload: React.FC = () => {
 
       const token = localStorage.getItem("token");
 
-      await axios.post("/api/ProductUpload", formData, {
+      await axios.post("/api/Product", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${token}`,
