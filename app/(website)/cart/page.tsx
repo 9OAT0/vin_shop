@@ -1,8 +1,12 @@
 import { PrismaClient } from '@prisma/client';
+import type { NextApiRequest, NextApiResponse } from 'next';
 
 const prisma = new PrismaClient();
 
-export default async function handler(req, res) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
   const { userId, productId } = req.query;
 
   if (!userId) {
@@ -11,9 +15,8 @@ export default async function handler(req, res) {
 
   if (req.method === 'GET') {
     try {
-      // ✅ ดึง cart + products + product details ด้วย query เดียว
       const cart = await prisma.cart.findUnique({
-        where: { userId },
+        where: { userId: String(userId) },
         include: {
           products: {
             include: {
@@ -32,7 +35,7 @@ export default async function handler(req, res) {
         return res.status(404).json({ error: 'Cart not found.' });
       }
 
-      const productsWithDetails = cart.products.map((cartProduct) => ({
+      const productsWithDetails = cart.products.map((cartProduct: { id: any; productId: any; product: { name: any; pictures: any[]; }; }) => ({
         id: cartProduct.id,
         cartId: cart.id,
         productId: cartProduct.productId,
@@ -60,8 +63,8 @@ export default async function handler(req, res) {
     try {
       const cartProduct = await prisma.cartProduct.findFirst({
         where: {
-          cart: { userId },
-          productId,
+          cart: { userId: String(userId) },
+          productId: String(productId),
         },
       });
 

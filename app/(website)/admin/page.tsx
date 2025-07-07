@@ -2,11 +2,11 @@
 
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useRouter } from "next/navigation"; // ✅ ใช้ useRouter
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 
 interface Product {
-  id: string; // ✅ เปลี่ยนเป็น string เนื่องจาก MongoDB ใช้ ObjectId
+  id: string; // ✅ ObjectId เป็น string
   name: string;
   size: string;
   price: string;
@@ -16,13 +16,11 @@ interface Product {
 
 const ProductManagement: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
-  const router = useRouter(); // ✅ ใช้ useRouter
+  const router = useRouter();
 
-  // ✅ ดึงข้อมูลสินค้าจาก API
   const fetchProducts = async () => {
     try {
-
-      const response = await axios.get<Product[]>("/api/productGet");
+      const response = await axios.get<Product[]>("/api/Product");
       setProducts(response.data);
     } catch (error) {
       console.error("❌ Error fetching products:", error);
@@ -33,50 +31,42 @@ const ProductManagement: React.FC = () => {
     fetchProducts();
   }, []);
 
-  // ✅ เลือกสินค้าทั้งหมด
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     setProducts(products.map((p) => ({ ...p, selected: e.target.checked })));
   };
 
-  // ✅ เลือกสินค้าทีละตัว
   const handleSelect = (id: string, checked: boolean) => {
     setProducts(products.map((p) => (p.id === id ? { ...p, selected: checked } : p)));
   };
 
-  // ✅ ลบสินค้าที่เลือก
   const handleDeleteSelected = async () => {
     const selectedIds = products.filter((p) => p.selected).map((p) => p.id);
-  
+
     if (selectedIds.length === 0) {
       alert("❌ Please select at least one product to delete.");
       return;
     }
-  
-    const confirmDelete = window.confirm(
-      `Are you sure you want to delete ${selectedIds.length} products?`
-    );
-  
-    if (!confirmDelete) return;
-  
-    const authToken = localStorage.getItem("token"); // ✅ ดึง Token จาก localStorage
-  
+
+    if (!window.confirm(`Are you sure you want to delete ${selectedIds.length} products?`)) return;
+
+    const authToken = localStorage.getItem("token");
+
     try {
       await Promise.all(
         selectedIds.map((id) =>
           axios.delete(`/api/product_fix/${id}`, {
-            headers: { Authorization: `Bearer ${authToken}` }, // ✅ ส่ง Token ไปกับคำขอ
+            headers: { Authorization: `Bearer ${authToken}` },
           })
         )
       );
-  
+
       alert("✅ Selected products deleted successfully!");
-      fetchProducts(); // ✅ รีโหลดตาราง
+      fetchProducts();
     } catch (error) {
       console.error("❌ Error deleting products:", error);
-      alert("❌ Failed to delete selected products! Check console for details.");
+      alert("❌ Failed to delete selected products!");
     }
   };
-  
 
   return (
     <div style={{ padding: "20px" }}>
@@ -125,24 +115,21 @@ const ProductManagement: React.FC = () => {
         </thead>
         <tbody>
           {products.map((product) => (
-            <tr
-              key={product.id}
-              style={{ borderBottom: "1px solid #ddd", cursor: "pointer" }}
-              onClick={() => router.push(`/editproduct/${product.id}`)} // ✅ คลิกแถวเพื่อแก้ไข
-            >
+            <tr key={product.id} style={{ borderBottom: "1px solid #ddd" }}>
               <td style={{ border: "1px solid #ddd", padding: "8px" }}>
                 <input
                   type="checkbox"
                   checked={!!product.selected}
-                  onClick={(e) => e.stopPropagation()} // ✅ ป้องกันคลิกแถวตอนเลือก checkbox
                   onChange={(e) => handleSelect(product.id, e.target.checked)}
                 />
               </td>
               <td style={{ border: "1px solid #ddd", padding: "8px" }}>
                 <Image
-                  src={product.pictures[0] || "/placeholder.jpg"} // ✅ ใช้ภาพ placeholder ถ้าไม่มี
+                  src={product.pictures[0] || "/placeholder.jpg"}
                   alt={product.name}
-                  style={{ width: "50px", height: "50px", objectFit: "cover" }}
+                  width={50} // ✅ Required by next/image
+                  height={50}
+                  style={{ objectFit: "cover", borderRadius: "8px" }}
                 />
               </td>
               <td style={{ border: "1px solid #ddd", padding: "8px" }}>{product.name}</td>
@@ -150,10 +137,7 @@ const ProductManagement: React.FC = () => {
               <td style={{ border: "1px solid #ddd", padding: "8px" }}>{product.price}</td>
               <td style={{ border: "1px solid #ddd", padding: "8px" }}>
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    router.push(`/editproduct/${product.id}`);
-                  }}
+                  onClick={() => router.push(`/editproduct/${product.id}`)}
                   style={{
                     backgroundColor: "blue",
                     color: "white",
