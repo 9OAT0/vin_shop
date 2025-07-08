@@ -13,7 +13,7 @@ const SECRET_KEY = process.env.SECRET_KEY;
 const storage = new CloudinaryStorage({
   cloudinary,
   params: async (req, file) => {
-    const { name } = req.body || { name: 'unknown' };
+    console.log(file);
     const timestamp = Date.now();
     return {
       folder: 'products',
