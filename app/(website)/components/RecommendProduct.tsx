@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Recprod from "./Recprod";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 
 interface Product {
   id: string;
@@ -20,20 +21,11 @@ export default function RecommendedProducts() {
     const fetchRecommendedProducts = async () => {
       setLoading(true);
       try {
-        console.log("📢 Fetching recommendations from /api/recommended...");
-
         const response = await fetch("/api/recommendations");
-        if (!response.ok) throw new Error(`❌ Failed to fetch: ${response.statusText}`);
+        if (!response.ok) throw new Error(`Failed to fetch: ${response.statusText}`);
 
         const data: Product[] = await response.json();
-        console.log("✅ Data received:", data);
-
-        if (data.length === 0) {
-          setError("❌ No recommended products available.");
-        } else {
-          setProducts(data);
-        }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        setProducts(data);
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -44,20 +36,25 @@ export default function RecommendedProducts() {
     fetchRecommendedProducts();
   }, []);
 
-  if (loading) return <p>Loading recommendations...</p>;
-  if (error) return <p className="text-red-500">{error}</p>;
+  if (loading) return <p className="text-center">Loading recommendations...</p>;
+  if (error) return <p className="text-center text-red-500">{error}</p>;
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-[200%]">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-4">
       {products.map((product) => (
-        <Recprod
-        key={product.id}
-        id={product.id} // ✅ Now `id` is valid!
-        imageSrc={product.pictures?.[0] || "/default.jpg"}
-        name={product.name}
-        price={typeof product.price === "number" ? product.price.toString() : product.price}
-        size={product.size || "N/A"}
-      />      
+        <Link
+          key={product.id}
+          href={`/buy?id=${product.id}`}
+          className="h-full border border-black hover:border-black hover:border-2"
+        >
+          <Recprod
+            id={product.id}
+            imageSrc={product.pictures?.[0] || "/default.jpg"}
+            name={product.name}
+            price={typeof product.price === "number" ? product.price.toString() : product.price}
+            size={product.size || "N/A"}
+          />
+        </Link>
       ))}
     </div>
   );

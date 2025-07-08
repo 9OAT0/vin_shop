@@ -97,15 +97,18 @@ function BuyProductPage() {
     }
   };
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div className="error-message">{error}</div>;
-  if (!product) return <div>Product not found.</div>;
+  if (loading) return <div className="text-center py-10">Loading...</div>;
+  if (error) return <div className="text-center text-red-500 py-10">{error}</div>;
+  if (!product) return <div className="text-center py-10">Product not found.</div>;
 
   return (
     <div className="min-h-screen bg-white text-black">
       <Navbar />
-      <div className="flex flex-col lg:flex-row">
-        <div className="lg:w-1/2 p-5">
+
+      {/* Product Detail */}
+      <div className="flex flex-col lg:flex-row gap-8 p-5">
+        {/* Images */}
+        <div className="lg:w-1/2 flex flex-col">
           <Image
             src={product.pictures?.[0] || "/default.jpg"}
             alt={product.name}
@@ -113,36 +116,33 @@ function BuyProductPage() {
             height={500}
             className="w-full h-auto object-cover rounded-lg mb-4"
           />
-          <div className="flex flex-wrap">
+          <div className="grid grid-cols-3 gap-2">
             {product.pictures?.slice(1).map((picture, index) => (
               <Image
                 key={index}
                 src={picture}
                 alt={`${product.name} Thumbnail`}
-                width={100}
-                height={100}
-                className="w-1/3 h-32 object-cover m-1 rounded-lg"
+                width={150}
+                height={150}
+                className="w-full h-32 object-cover rounded-lg"
               />
             ))}
           </div>
         </div>
 
-        <div className="lg:w-1/2 p-5 flex flex-col sticky top-10 z-10 bg-white">
-          <h1 className="text-2xl font-bold">{product.name}</h1>
-          <div className="border border-gray-300 p-4 mt-4">
+        {/* Details */}
+        <div className="lg:w-1/2 flex flex-col sticky top-10 bg-white p-5 rounded shadow">
+          <h1 className="text-3xl font-bold">{product.name}</h1>
+          <div className="border border-gray-300 p-4 mt-4 rounded">
             <p className="text-lg">Size: {product.size || "N/A"}</p>
             <p className="text-lg">
-              Price:{" "}
-              {typeof product.price === "number"
-                ? product.price.toString()
-                : product.price}{" "}
-              ฿
+              Price: {typeof product.price === "number" ? product.price.toFixed(2) : product.price} ฿
             </p>
-            <p className="mt-2">Fabric: Cotton 100%</p>
+            <p className="mt-2 text-gray-600">Fabric: Cotton 100%</p>
           </div>
           <button
             onClick={handleAddToCart}
-            className="bg-black text-white py-2 px-4 mt-5 rounded transition duration-300 ease-in-out hover:bg-gray-800"
+            className="bg-black text-white py-3 px-6 mt-5 rounded hover:bg-gray-800 disabled:opacity-50"
             disabled={isAddingToCart}
           >
             {isAddingToCart ? "Adding..." : "ADD TO CART"}
@@ -150,22 +150,20 @@ function BuyProductPage() {
         </div>
       </div>
 
-      <div className="w-full h-10 border border-black flex justify-center items-center mt-4">
-        <p>YOU MAY ALSO ENJOY</p>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {/* Recommendations */}
+      <div className="text-center my-8">
+        <h2 className="text-xl font-semibold mb-4 border border-black p-2">YOU MAY ALSO ENJOY</h2>
         <RecommendedProducts />
       </div>
+
       <Footer />
     </div>
   );
 }
 
-// ✅ Wrap component in <Suspense> to prevent build errors
 export default function Page() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<div className="text-center py-10">Loading...</div>}>
       <BuyProductPage />
     </Suspense>
   );
