@@ -72,23 +72,27 @@ export default function Home() {
         <Navbar />
 
         {/* Hero Section */}
-        <div className="flex flex-col sm:flex-row">
-          <Image
-            src="/Rectangle 268.png"
-            alt="Promotional Banner"
-            width={1920}
-            height={600}
-            className="w-full object-cover"
-            priority
-          />
-          <Image
-            src="/man.png"
-            alt="Fashion Model"
-            width={1920}
-            height={600}
-            className="w-full object-cover"
-            priority
-          />
+        <div className="flex flex-col sm:flex-row gap-2 border border-b-black">
+          <div className="flex-1">
+            <Image
+              src="/Rectangle 268.png"
+              alt="Promotional Banner"
+              width={1920}
+              height={600}
+              className="w-full h-full object-cover rounded-md"
+              priority
+            />
+          </div>
+          <div className="flex-1">
+            <Image
+              src="/man.png"
+              alt="Fashion Model"
+              width={1920}
+              height={600}
+              className="w-full h-full object-cover rounded-md"
+              priority
+            />
+          </div>
         </div>
 
         {/* Recommended Products */}
@@ -98,12 +102,12 @@ export default function Home() {
           </h1>
         </div>
 
-        <div className="flex flex-wrap gap-4 p-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
           {products.map((product) => (
             <Link
               key={product.id}
               href={`/buy?id=${product.id}`}
-              className="w-full sm:w-1/2 lg:w-1/3"
+              className="block h-full"
             >
               <ProductCard
                 imageSrc={product.pictures?.[0] || "/default.jpg"}
@@ -130,7 +134,7 @@ export default function Home() {
         </div>
 
         {/* Another Products Section */}
-        <div className="flex flex-col sm:flex-row gap-4 p-4">
+        <div className="flex flex-col items-startsm:flex-row gap-4 p-4">
           {anotherProducts.map((product, index) => (
             <AnotherProductCard
               key={index}
