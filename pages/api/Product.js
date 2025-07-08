@@ -25,7 +25,7 @@ const storage = new CloudinaryStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: 10 * 1024 * 1024 },
 });
 
 export const config = {
@@ -50,21 +50,32 @@ export default async function handler(req, res) {
     }
   }
 
+  // ✅ GET: ดึง product ทั้งหมด หรือ 1 ชิ้นตาม id
   if (req.method === 'GET') {
+    const { id } = req.query;
     try {
-      const products = await prisma.products.findMany();
-      console.log(`✅ Fetched ${products.length} products`);
-      return res.status(200).json(products);
+      if (id) {
+        const product = await prisma.products.findUnique({ where: { id } });
+        if (!product) {
+          return res.status(404).json({ error: 'Product not found.' });
+        }
+        return res.status(200).json(product);
+      } else {
+        const products = await prisma.products.findMany();
+        return res.status(200).json(products);
+      }
     } catch (error) {
-      console.error('❌ Error fetching products:', error.message);
-      return res.status(500).json({ error: 'Error fetching products', details: error.message });
+      console.error('❌ Error fetching product(s):', error.message);
+      return res.status(500).json({ error: 'Error fetching product(s)', details: error.message });
     }
   }
 
+  // ✅ ป้องกันการแก้ไขถ้าไม่ใช่ ADMIN
   if (!userPayload || userPayload.role !== 'ADMIN') {
     return res.status(403).json({ error: 'Access denied. Only ADMIN can modify products.' });
   }
 
+  // ✅ POST: เพิ่มสินค้าใหม่
   if (req.method === 'POST') {
     upload.array('pictures', 5)(req, res, async (err) => {
       if (err) {
@@ -74,7 +85,7 @@ export default async function handler(req, res) {
 
       const { name, price, size, description } = req.body;
       if (!name || !price || !size || !description || !req.files || req.files.length === 0) {
-        return res.status(400).json({ error: 'All fields are required, including at least one file.' });
+        return res.status(400).json({ error: 'All fields and at least one image are required.' });
       }
 
       const pictures = req.files.map(file => file.path);
@@ -96,34 +107,42 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'Error saving product', details: error.message });
       }
     });
-    return; // Important: prevent running further
+    return; // stop here
   }
 
+  // ✅ PUT: แก้ไขสินค้าเดิม
   if (req.method === 'PUT') {
-    upload.array('pictures', 5)(req, res, async (err) => {
+    upload.array('newImages', 10)(req, res, async (err) => {
       if (err) {
         console.error('❌ Upload error:', err.message);
         return res.status(400).json({ error: 'Error uploading file: ' + err.message });
       }
 
-      const { productId, name, price, size, description } = req.body;
-      if (!productId) {
+      const { id, name, price, size, description, remainingPictures } = req.body;
+      if (!id) {
         return res.status(400).json({ error: 'Product ID is required for update.' });
       }
 
       try {
-        const existingProduct = await prisma.products.findUnique({ where: { id: productId } });
+        const existingProduct = await prisma.products.findUnique({ where: { id } });
         if (!existingProduct) {
           return res.status(404).json({ error: 'Product not found.' });
         }
 
-        let pictures = existingProduct.pictures;
+        let pictures = [];
+        try {
+          pictures = JSON.parse(remainingPictures || '[]');
+        } catch {
+          pictures = [];
+        }
+
         if (req.files && req.files.length > 0) {
-          pictures = req.files.map(file => file.path);
+          const uploadedFiles = req.files.map(file => file.path);
+          pictures = [...pictures, ...uploadedFiles];
         }
 
         const updatedProduct = await prisma.products.update({
-          where: { id: productId },
+          where: { id },
           data: {
             name: name || existingProduct.name,
             price: price ? parseFloat(price) : existingProduct.price,
@@ -132,6 +151,7 @@ export default async function handler(req, res) {
             pictures,
           },
         });
+
         console.log(`✅ Product updated: ${updatedProduct.id}`);
         return res.status(200).json(updatedProduct);
       } catch (error) {
@@ -139,13 +159,13 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'Error updating product', details: error.message });
       }
     });
-    return; // Important
+    return;
   }
 
+  // ✅ DELETE: ลบสินค้า
   if (req.method === 'DELETE') {
     let productId = req.query.productId;
 
-    // Fallback: parse JSON body if productId not in query
     if (!productId && req.headers['content-type']?.includes('application/json')) {
       try {
         const buffers = [];
