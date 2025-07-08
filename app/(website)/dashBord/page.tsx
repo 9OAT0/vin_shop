@@ -17,7 +17,6 @@ import {
   Cell,
 } from "recharts";
 
-// Define types for product and order
 interface Product {
   id: string;
   name: string;
@@ -39,7 +38,7 @@ interface Report {
 
 const Dashboard: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
-  const [orders, setOrders] = useState<Order[] | null>(null);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [report, setReport] = useState<Report>({
     dailySummary: [],
     statusSummary: [],
@@ -49,70 +48,48 @@ const Dashboard: React.FC = () => {
   const [newTrackingId, setNewTrackingId] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Fetch all products
-  const fetchOrders = async () => {
-    console.log("📡 Fetching orders..."); // เช็คว่าฟังก์ชันถูกเรียกไหม
-    try {
-      const token = localStorage.getItem("token");
-  
-      if (!token) {
-        console.error("❌ Token not found");
-        alert("❌ กรุณาเข้าสู่ระบบใหม่");
-        return;
-      }
-  
-      const response = await axios.get("/api/getOrderAdmin", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-  
-      const data = response.data;
-  
-      console.log("📡 Orders Received:", data); // 🔍 ตรวจสอบค่าที่ API ส่งมา
-  
-      if (Array.isArray(data)) {
-        setOrders(data); // ✅ ถ้าเป็น Array ให้กำหนดค่า
-      } else {
-        console.error("❌ Orders is not an array:", data);
-        setOrders([]); // ❌ ป้องกัน undefined
-      }
-    } catch (error) {
-      console.error("❌ Error fetching orders:", error);
-      setOrders([]); // ✅ ถ้ามี error ให้ตั้งค่าเป็น []
-    }
-  };
-  
+  const colors = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
+  // ✅ Fetch Products
   const fetchProducts = async () => {
     try {
-      const response = await axios.get<Product[]>("/api/productGet");
+      const response = await axios.get<Product[]>("/api/Product", { withCredentials: true });
       setProducts(response.data);
     } catch (err) {
-      console.error("Error fetching products:", err);
+      console.error("❌ Error fetching products:", err);
     }
   };
 
-  // Fetch report
+  // ✅ Fetch Orders
+  const fetchOrders = async () => {
+    try {
+      const response = await axios.get<Order[]>("/api/getOrders", { withCredentials: true });
+      setOrders(Array.isArray(response.data) ? response.data : []);
+    } catch (err) {
+      console.error("❌ Error fetching orders:", err);
+      setOrders([]); // fallback
+    }
+  };
+
+  // ✅ Fetch Report
   const fetchReport = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.get<Report>("/api/reportData", {
-        headers: { Authorization: `Bearer ${token}` },
+      const response = await axios.get<Report>("/api/reportData", { withCredentials: true });
+      setReport({
+        dailySummary: response.data.dailySummary || [],
+        statusSummary: response.data.statusSummary || [],
       });
-      setReport(response.data);
     } catch (err) {
-      console.error("Error fetching report:", err);
+      console.error("❌ Error fetching report:", err);
+      setReport({ dailySummary: [], statusSummary: [] }); // fallback
     }
   };
 
-  // Fetch products, orders, and reports when component mounts
   useEffect(() => {
     fetchProducts();
     fetchOrders();
     fetchReport();
   }, []);
-
-  // Colors for Pie Chart
-  const colors = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
   const openEditModal = (order: Order) => {
     setEditOrder(order);
@@ -120,59 +97,31 @@ const Dashboard: React.FC = () => {
     setNewTrackingId(order.trackingId || "");
   };
 
-  // ปิด Modal
   const closeEditModal = () => {
     setEditOrder(null);
     setNewStatus("");
     setNewTrackingId("");
   };
 
-  // ฟังก์ชันอัปเดตคำสั่งซื้อผ่าน API
   const handleUpdateOrder = async () => {
-    if (!editOrder || !editOrder.id) {
-      alert("❌ กรุณาเลือกคำสั่งซื้อก่อนอัปเดต");
-      return;
-    }
+    if (!editOrder?.id) return;
 
     setLoading(true);
 
     try {
-      const token = localStorage.getItem("token");
-      const apiUrl = `/api/orders/update`;
-
-      console.log("📡 Sending PUT request to:", apiUrl);
-      console.log("📝 Data Sent:", {
+      const response = await axios.put("/api/OrderAdmin", {
         orderId: editOrder.id,
-        status: newStatus.toUpperCase(),
-        trackingId: newTrackingId,
-      });
+        status: newStatus,
+        trackingId: newTrackingId || null,
+      }, { withCredentials: true });
 
-      const response = await axios.put<{ message: string }>(
-        apiUrl,
-        {
-          orderId: editOrder.id,
-          status: newStatus.toUpperCase(),
-          trackingId: newTrackingId || null,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      console.log("✅ Order updated successfully:", response.data.message);
-      alert("✅ อัปเดตคำสั่งซื้อสำเร็จ!");
-      setEditOrder(null);
+      console.log("✅ Order updated:", response.data);
+      alert("✅ คำสั่งซื้อถูกอัปเดตเรียบร้อยแล้ว");
+      closeEditModal();
       fetchOrders();
-    } catch (error: unknown) {
-      // If error is an instance of Error (a generic JavaScript error)
-      if (error instanceof Error) {
-        console.error("❌ Error updating order:", error.message);
-        alert(`❌ Update failed: ${error.message}`);
-      } else {
-        // If the error is not an instance of Error (such as a network error or custom error)
-        console.error("❌ An unknown error occurred", error);
-        alert(`❌ An unknown error occurred`);
-      }
+    } catch (err) {
+      console.error("❌ Error updating order:", err);
+      alert("❌ ไม่สามารถอัปเดตคำสั่งซื้อได้");
     } finally {
       setLoading(false);
     }
@@ -180,14 +129,13 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-100 p-6 text-black">
-      {/* ✅ TabBar Navigation */}
       <div className="bg-white p-4 rounded-lg shadow-md mb-6 flex justify-between">
         <Link href="/admin">
           <button className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
             🛠️ Product Edit
           </button>
         </Link>
-        <Link href="/ProductUpload">
+        <Link href="/Product">
           <button className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600">
             🆕 เพิ่มสินค้า
           </button>
@@ -196,7 +144,7 @@ const Dashboard: React.FC = () => {
 
       <h1 className="text-3xl font-bold text-center mb-6">จัดการระบบ</h1>
 
-      {/* Product Management */}
+      {/* ✅ Product Table */}
       <section className="bg-white p-6 rounded-lg shadow-md mb-6">
         <h2 className="text-xl font-semibold mb-4">สินค้า</h2>
         <table className="w-full border-collapse border border-gray-300">
@@ -217,7 +165,7 @@ const Dashboard: React.FC = () => {
         </table>
       </section>
 
-      {/* ✅ Order Management */}
+      {/* ✅ Orders Table */}
       <section className="bg-white p-6 rounded-lg shadow-md mb-6">
         <h2 className="text-xl font-semibold mb-4">คำสั่งซื้อ</h2>
         <table className="w-full border-collapse border border-gray-300">
@@ -231,13 +179,7 @@ const Dashboard: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {orders === null ? (
-              <tr>
-                <td colSpan={5} className="text-center p-4">
-                  ⏳ กำลังโหลดข้อมูล...
-                </td>
-              </tr>
-            ) : orders.length > 0 ? (
+            {orders.length > 0 ? (
               orders.map((order) => (
                 <tr key={order.id} className="border border-gray-300">
                   <td className="border border-gray-300 p-2">{order.id}</td>
@@ -269,18 +211,68 @@ const Dashboard: React.FC = () => {
         </table>
       </section>
 
-      {/* ✅ Order Edit Modal */}
+      {/* ✅ Report Charts */}
+      <section className="bg-white p-6 rounded-lg shadow-md">
+        <h2 className="text-xl font-semibold mb-4">รายงาน</h2>
+
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold mb-2">คำสั่งซื้อรายวัน</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={report.dailySummary || []}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="totalItems" fill="#8884d8" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div>
+          <h3 className="text-lg font-semibold mb-2">สรุปสถานะคำสั่งซื้อ</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie
+                data={report.statusSummary || []}
+                dataKey="count"
+                nameKey="status"
+                cx="50%"
+                cy="50%"
+                outerRadius={100}
+                label
+              >
+                {(report.statusSummary || []).map((entry, idx) => (
+                  <Cell
+                    key={`cell-${idx}`}
+                    fill={colors[idx % colors.length]}
+                  />
+                ))}
+              </Pie>
+              <Tooltip />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      </section>
+
+      {/* ✅ Edit Modal */}
       {editOrder && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
           <div className="bg-white p-6 rounded-lg shadow-lg w-96">
             <h2 className="text-xl font-semibold mb-4">แก้ไขคำสั่งซื้อ</h2>
             <label className="block mb-2">สถานะ:</label>
-            <input
-              type="text"
+            <select
               value={newStatus}
               onChange={(e) => setNewStatus(e.target.value)}
               className="w-full p-2 border border-gray-300 rounded mb-3"
-            />
+            >
+              <option value="PENDING">Pending</option>
+              <option value="SHIPPED">Shipped</option>
+              <option value="DELIVERED">Delivered</option>
+              <option value="CANCELLED">Canceled</option>
+            </select>
+
             <label className="block mb-2">Tracking ID:</label>
             <input
               type="text"
@@ -298,6 +290,7 @@ const Dashboard: React.FC = () => {
               <button
                 onClick={handleUpdateOrder}
                 className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                disabled={loading}
               >
                 {loading ? "⏳ กำลังบันทึก..." : "💾 บันทึก"}
               </button>
@@ -305,54 +298,6 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       )}
-
-      {/* Report Section */}
-      <section className="bg-white p-6 rounded-lg shadow-md">
-        <h2 className="text-xl font-semibold mb-4">รายงาน</h2>
-
-        {/* Daily Summary Graph */}
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-2">คำสั่งซื้อรายวัน</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={report.dailySummary}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="totalItems" fill="#8884d8" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Status Summary Graph */}
-        <div>
-          <h3 className="text-lg font-semibold mb-2">สรุปสถานะคำสั่งซื้อ</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={report.statusSummary}
-                dataKey="count"
-                nameKey="status"
-                cx="50%"
-                cy="50%"
-                outerRadius={100}
-                fill="#82ca9d"
-                label
-              >
-                {report.statusSummary.map((entry, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={colors[index % colors.length]}
-                  />
-                ))}
-              </Pie>
-              <Tooltip />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-      </section>
     </div>
   );
 };

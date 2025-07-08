@@ -42,8 +42,9 @@ export default async function handler(req, res) {
         orderBy: { createdAt: 'desc' },
       });
 
-      if (!orders || orders.length === 0) {
-        return res.status(404).json({ message: 'No orders found.' });
+      if (!orders.length) {
+        console.warn('⚠️ No orders found');
+        return res.status(200).json([]); // ✅ ส่ง array ว่างแทน error
       }
 
       console.log(`✅ Admin fetched ${orders.length} orders`);
@@ -57,16 +58,16 @@ export default async function handler(req, res) {
   else if (req.method === 'PUT') {
     const { orderId, status, trackingId } = req.body;
 
-    if (!orderId) {
-      return res.status(400).json({ error: 'Order ID is required to update.' });
+    if (!orderId || !status) {
+      return res.status(400).json({ error: 'Order ID and Status are required.' });
     }
 
     try {
       const updatedOrder = await prisma.order.update({
         where: { id: orderId },
         data: {
-          status: status || undefined,
-          trackingId: trackingId || undefined,
+          status: status,
+          trackingId: trackingId || null,
         },
         include: {
           product: true,
@@ -77,7 +78,10 @@ export default async function handler(req, res) {
       });
 
       console.log(`✅ Order ${orderId} updated by admin`);
-      return res.status(200).json({ message: 'Order updated successfully', updatedOrder });
+      return res.status(200).json({
+        message: 'Order updated successfully',
+        updatedOrder,
+      });
     } catch (error) {
       console.error('❌ Error updating order:', error.message);
       return res.status(500).json({ error: 'Error updating order', details: error.message });
