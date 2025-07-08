@@ -112,37 +112,39 @@ export default async function handler(req, res) {
 
   // ✅ PUT: แก้ไขสินค้าเดิม
   if (req.method === 'PUT') {
-    upload.array('newImages', 10)(req, res, async (err) => {
+    upload.array('pictures', 5)(req, res, async (err) => {
       if (err) {
         console.error('❌ Upload error:', err.message);
-        return res.status(400).json({ error: 'Error uploading file: ' + err.message });
+        return res.status(400).json({ error: 'Upload failed: ' + err.message });
       }
 
-      const { id, name, price, size, description, remainingPictures } = req.body;
-      if (!id) {
+      const { productId, name, price, size, description, remainingPictures } = req.body;
+
+      if (!productId) {
         return res.status(400).json({ error: 'Product ID is required for update.' });
       }
 
       try {
-        const existingProduct = await prisma.products.findUnique({ where: { id } });
+        const existingProduct = await prisma.products.findUnique({ where: { id: productId } });
         if (!existingProduct) {
           return res.status(404).json({ error: 'Product not found.' });
         }
 
         let pictures = [];
         try {
-          pictures = JSON.parse(remainingPictures || '[]');
-        } catch {
-          pictures = [];
+          pictures = JSON.parse(remainingPictures);
+        } catch (e) {
+          console.error('❌ Failed to parse remainingPictures:', e);
+          return res.status(400).json({ error: 'Invalid remainingPictures JSON' });
         }
 
         if (req.files && req.files.length > 0) {
-          const uploadedFiles = req.files.map(file => file.path);
-          pictures = [...pictures, ...uploadedFiles];
+          const newUploadedPics = req.files.map(file => file.path);
+          pictures = [...pictures, ...newUploadedPics];
         }
 
         const updatedProduct = await prisma.products.update({
-          where: { id },
+          where: { id: productId },
           data: {
             name: name || existingProduct.name,
             price: price ? parseFloat(price) : existingProduct.price,
@@ -153,7 +155,7 @@ export default async function handler(req, res) {
         });
 
         console.log(`✅ Product updated: ${updatedProduct.id}`);
-        return res.status(200).json(updatedProduct);
+        return res.status(200).json({ message: 'Product updated successfully', updatedProduct });
       } catch (error) {
         console.error('❌ Error updating product:', error.message);
         return res.status(500).json({ error: 'Error updating product', details: error.message });
@@ -161,6 +163,7 @@ export default async function handler(req, res) {
     });
     return;
   }
+
 
   // ✅ DELETE: ลบสินค้า
   if (req.method === 'DELETE') {

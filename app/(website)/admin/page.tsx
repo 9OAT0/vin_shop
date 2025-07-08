@@ -54,8 +54,10 @@ const ProductManagement: React.FC = () => {
     try {
       await Promise.all(
         selectedIds.map((id) =>
-          axios.delete(`/api/Product/${id}`, {
+          axios.delete(`/api/Product`, {
+            params: { productId: id },
             headers: { Authorization: `Bearer ${authToken}` },
+            withCredentials: true,
           })
         )
       );
@@ -74,7 +76,7 @@ const ProductManagement: React.FC = () => {
         <h1 style={{ fontSize: "24px", fontWeight: "bold" }}>Product Management</h1>
         <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "10px" }}>
           <button
-            onClick={() => alert("Add Product functionality")}
+            onClick={() => router.push("/ProductUpload")}
             style={{
               marginRight: "10px",
               backgroundColor: "black",

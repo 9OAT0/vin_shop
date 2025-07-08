@@ -79,7 +79,7 @@ const ProductUpload: React.FC = () => {
       });
 
       setMessage("✅ อัปโหลดสินค้าสำเร็จ!");
-      router.push('/');
+      router.push('/admin');
       setPreviewImages([]); // ✅ ล้างภาพตัวอย่างเมื่ออัปโหลดสำเร็จ
       reset();
     } catch (error) {

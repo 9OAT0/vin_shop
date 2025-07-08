@@ -12,9 +12,9 @@ interface Product {
   id: string;
   name: string;
   price: number;
+  size: string;
   description?: string;
   pictures: string[];
-  size: string;
 }
 
 const EditProductPage: React.FC = () => {
@@ -23,26 +23,27 @@ const EditProductPage: React.FC = () => {
   const { id } = params as { id: string };
 
   const [name, setName] = useState('');
-  const [price, setPrice] = useState<number>(0);
-  const [description, setDescription] = useState('');
+  const [price, setPrice] = useState<number | ''>(''); // ✅ แก้ NaN
   const [size, setSize] = useState('');
+  const [description, setDescription] = useState('');
   const [pictures, setPictures] = useState<string[]>([]);
   const [newImages, setNewImages] = useState<File[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // ✅ Fetch product details
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const response = await axios.get<Product>(`/api/Product`, {
+        const response = await axios.get<Product>('/api/Product', {
           params: { id },
           withCredentials: true,
         });
         const data = response.data;
         setName(data.name);
         setPrice(data.price);
+        setSize(data.size);
         setDescription(data.description || '');
-        setSize(data.size || '');
         setPictures(data.pictures || []);
         console.log('✅ Product fetched:', data);
       } catch (err: any) {
@@ -56,18 +57,22 @@ const EditProductPage: React.FC = () => {
     if (id) fetchProduct();
   }, [id]);
 
+  // ✅ Upload new images
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       setNewImages(Array.from(e.target.files));
     }
   };
 
+  // ✅ Remove image from existing pictures
   const handleRemoveImage = (imageUrl: string) => {
     setPictures((prev) => prev.filter((pic) => pic !== imageUrl));
   };
 
+  // ✅ Handle drag and drop sorting
   const handleDragEnd = (event: any) => {
     const { active, over } = event;
+
     if (active.id !== over.id) {
       setPictures((prev) => {
         const oldIndex = prev.indexOf(active.id);
@@ -77,32 +82,34 @@ const EditProductPage: React.FC = () => {
     }
   };
 
+  // ✅ Submit update
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
-    const formData = new FormData();
-    formData.append('id', id);
-    formData.append('name', name);
-    formData.append('price', price.toString());
-    formData.append('size', size);
-    formData.append('description', description);
-    formData.append('remainingPictures', JSON.stringify(pictures));
-
-    newImages.forEach((file) => {
-      formData.append('newImages', file);
-    });
-
     try {
+      const formData = new FormData();
+      formData.append('productId', id);
+      formData.append('name', name);
+      formData.append('price', price.toString());
+      formData.append('size', size);
+      formData.append('description', description);
+      formData.append('remainingPictures', JSON.stringify(pictures)); // ✅ รูปเดิมที่เหลือ
+
+      newImages.forEach((file) => {
+        formData.append('pictures', file); // ✅ field 'pictures' สำหรับรูปใหม่
+      });
+
       const response = await axios.put('/api/Product', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
         withCredentials: true,
       });
+
       console.log('✅ Product updated:', response.data);
       alert('✅ Product updated successfully');
-      router.push('/dashBord');
+      router.push('/admin');
     } catch (err: any) {
-      console.error('❌ Error updating product:', err.message);
-      alert(`❌ Failed to update product: ${err.message}`);
+      console.error('❌ Error updating product:', err.response?.data || err.message);
+      alert(`❌ Failed to update product: ${err.response?.data?.error || err.message}`);
     }
   };
 
@@ -128,8 +135,8 @@ const EditProductPage: React.FC = () => {
           <input
             type="number"
             className="border p-2 w-full"
-            value={price}
-            onChange={(e) => setPrice(parseFloat(e.target.value))}
+            value={price ?? ''} // ✅ fallback
+            onChange={(e) => setPrice(parseFloat(e.target.value) || '')}
             required
           />
         </div>
@@ -140,7 +147,6 @@ const EditProductPage: React.FC = () => {
             className="border p-2 w-full"
             value={size}
             onChange={(e) => setSize(e.target.value)}
-            required
           />
         </div>
         <div>
@@ -151,8 +157,9 @@ const EditProductPage: React.FC = () => {
             onChange={(e) => setDescription(e.target.value)}
           ></textarea>
         </div>
+
         <div>
-          <label className="block mb-1">Current Images:</label>
+          <label className="block mb-1">Current Images (Drag to reorder):</label>
           <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={pictures} strategy={verticalListSortingStrategy}>
               <div className="flex flex-wrap gap-2">
@@ -168,6 +175,7 @@ const EditProductPage: React.FC = () => {
             </SortableContext>
           </DndContext>
         </div>
+
         <div>
           <label className="block mb-1">Upload New Images:</label>
           <input
@@ -177,7 +185,13 @@ const EditProductPage: React.FC = () => {
             onChange={handleImageChange}
             className="border p-2 w-full"
           />
+          {newImages.length > 0 && (
+            <div className="mt-2 text-sm text-gray-600">
+              {newImages.length} new image(s) selected
+            </div>
+          )}
         </div>
+
         <button
           type="submit"
           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
