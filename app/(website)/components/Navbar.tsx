@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 
@@ -12,15 +12,15 @@ interface User {
 }
 
 export default function Navbar() {
-  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await axios.get<{ user: User }>('/api/login', { withCredentials: true });
-        console.log('✅ User:', res.data.user);
+        const res = await axios.get<{ user: User }>('/api/me', { withCredentials: true });
+        console.log('✅ User fetched:', res.data.user);
         setUser(res.data.user);
         setIsAuthenticated(true);
       } catch (err) {
@@ -35,12 +35,13 @@ export default function Navbar() {
 
   const handleLogout = async () => {
     try {
-      await axios.post('/api/logout', {}, { withCredentials: true });
+      await axios.post('/api/Logout', {}, { withCredentials: true });
+      console.log('✅ Logged out');
       setUser(null);
       setIsAuthenticated(false);
       router.push('/login');
     } catch (err) {
-      console.error('❌ Logout Error:', err);
+      console.error('❌ Logout failed:', err);
     }
   };
 
@@ -51,7 +52,7 @@ export default function Navbar() {
         <a href="/shopall">SHOP ALL</a>
         {isAuthenticated ? (
           <>
-            <span>Hi, {user?.name}</span>
+            <a href="/dashBord"><span>{user?.name}</span></a>
             <button onClick={handleLogout}>LOGOUT</button>
           </>
         ) : (
