@@ -25,14 +25,13 @@ export default function LoginPage() {
     try {
       const response = await fetch('/api/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include', // ✅ สำคัญมากสำหรับ httpOnly
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // ✅ สำคัญสำหรับ httpOnly cookie
         body: JSON.stringify({ email, password }),
       });
 
       console.log('📥 API Response:', response);
+      console.log('📥 Response Headers:', Array.from(response.headers.entries()));
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
@@ -42,6 +41,10 @@ export default function LoginPage() {
 
       const data = await response.json();
       console.log('✅ Login success data:', data);
+
+      // ✅ ตรวจสอบว่ามี cookie หรือไม่
+      const cookies = document.cookie;
+      console.log('🍪 Current Document Cookies:', cookies);
 
       router.push('/');
     } catch (err: any) {
