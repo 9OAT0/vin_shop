@@ -1,3 +1,5 @@
+// /pages/api/OrderAdmin.ts
+
 import { PrismaClient } from '@prisma/client';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
@@ -29,8 +31,23 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     try {
       const orders = await prisma.order.findMany({
-        include: {
-          product: true,
+        select: {
+          id: true,
+          status: true,
+          trackingId: true,
+          paymentSlip: true, // ✅ Include payment slip
+          createdAt: true,
+          updatedAt: true,
+          product: {
+            select: {
+              id: true,
+              name: true,
+              pictures: true,
+              price: true,
+              size: true,
+              description: true,
+            },
+          },
           user: {
             select: {
               id: true,
@@ -42,11 +59,6 @@ export default async function handler(req, res) {
         orderBy: { createdAt: 'desc' },
       });
 
-      if (!orders.length) {
-        console.warn('⚠️ No orders found');
-        return res.status(200).json([]); // ✅ ส่ง array ว่างแทน error
-      }
-
       console.log(`✅ Admin fetched ${orders.length} orders`);
       return res.status(200).json(orders);
     } catch (error) {
@@ -55,7 +67,7 @@ export default async function handler(req, res) {
     }
   }
 
-  else if (req.method === 'PUT') {
+  if (req.method === 'PUT') {
     const { orderId, status, trackingId } = req.body;
 
     if (!orderId || !status) {
@@ -66,13 +78,32 @@ export default async function handler(req, res) {
       const updatedOrder = await prisma.order.update({
         where: { id: orderId },
         data: {
-          status: status,
+          status,
           trackingId: trackingId || null,
         },
-        include: {
-          product: true,
+        select: {
+          id: true,
+          status: true,
+          trackingId: true,
+          paymentSlip: true, // ✅ Include payment slip after update
+          createdAt: true,
+          updatedAt: true,
+          product: {
+            select: {
+              id: true,
+              name: true,
+              pictures: true,
+              price: true,
+              size: true,
+              description: true,
+            },
+          },
           user: {
-            select: { id: true, name: true, email: true },
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
           },
         },
       });
@@ -88,8 +119,6 @@ export default async function handler(req, res) {
     }
   }
 
-  else {
-    res.setHeader('Allow', ['GET', 'PUT']);
-    return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
-  }
+  res.setHeader('Allow', ['GET', 'PUT']);
+  return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
 }

@@ -15,7 +15,7 @@ interface Product {
   size: string;
 }
 
-function BuyProductPage() {
+function BuyPage() {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -53,24 +53,14 @@ function BuyProductPage() {
     if (!product || isAddingToCart) return;
     setIsAddingToCart(true);
 
-    const userId = localStorage.getItem("userId");
-    const token = localStorage.getItem("token");
-
-    if (!userId) {
-      alert("Please log in to add products to your cart.");
-      setIsAddingToCart(false);
-      return;
-    }
-
     try {
       const response = await fetch("/api/addtocart", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
         },
+        credentials: "include", // ✅ send cookies
         body: JSON.stringify({
-          userId,
           productId: product.id,
         }),
       });
@@ -78,7 +68,7 @@ function BuyProductPage() {
       if (response.status !== 201) {
         const errorData = await response.text();
         console.error("Error data from API:", errorData);
-        alert("Product already in cart");
+        alert("Product may already be in cart or authentication failed.");
       } else {
         const result = await response.json();
         console.log("Product added to cart:", result);
@@ -108,7 +98,7 @@ function BuyProductPage() {
         <div className="lg:w-1/2 p-5">
           <Image
             src={product.pictures?.[0] || "/default.jpg"}
-            alt={product.name}
+            alt={product.name || "Product image"}
             width={500}
             height={500}
             className="w-full h-auto object-cover rounded-lg mb-4"
@@ -118,7 +108,7 @@ function BuyProductPage() {
               <Image
                 key={index}
                 src={picture}
-                alt={`${product.name} Thumbnail`}
+                alt={`${product.name || "Product"} Thumbnail ${index + 1}`}
                 width={100}
                 height={100}
                 className="w-1/3 h-32 object-cover m-1 rounded-lg"
@@ -162,11 +152,10 @@ function BuyProductPage() {
   );
 }
 
-// ✅ Wrap component in <Suspense> to prevent build errors
 export default function Page() {
   return (
     <Suspense fallback={<div>Loading...</div>}>
-      <BuyProductPage />
+      <BuyPage />
     </Suspense>
   );
 }

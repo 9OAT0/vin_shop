@@ -45,13 +45,14 @@ export default async function handler(req, res) {
       return res.status(404).json({ message: 'No orders found for this user' });
     }
 
-    // ✅ รวมรูปภาพแรกของแต่ละสินค้า
+    // ✅ รวมข้อมูล พร้อม paymentSlip
     const ordersWithDetails = orders.map(order => ({
       id: order.id,
       status: order.status,
       trackingId: order.trackingId,
       createdAt: order.createdAt,
       updatedAt: order.updatedAt,
+      paymentSlip: order.paymentSlip, // ✅ เพิ่มตรงนี้
       product: {
         id: order.product.id,
         name: order.product.name,

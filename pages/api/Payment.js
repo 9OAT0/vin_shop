@@ -14,7 +14,7 @@ const SECRET_KEY = process.env.SECRET_KEY;
 // ✅ Cloudinary Storage
 const storage = new CloudinaryStorage({
   cloudinary,
-  params: async (req, _file) => {
+  params: async (_req, _file) => {
     const timestamp = Date.now();
     return {
       folder: 'paymentSlip',
@@ -26,17 +26,23 @@ const storage = new CloudinaryStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
 });
 
 export const config = {
-  api: { bodyParser: false }, // ❌ ต้องปิดให้ Multer ทำงาน
+  api: { bodyParser: false }, // ❌ ต้องปิดเพื่อใช้ Multer
 };
 
-// ✅ Helper อ่าน JSON body เมื่อไม่มี file upload
+// ✅ Helper: อ่าน JSON body เมื่อไม่มี file upload
 async function parseJsonBody(req) {
   const rawBody = await getRawBody(req);
   return JSON.parse(rawBody.toString());
+}
+
+// ✅ ฟังก์ชันสร้างลิงก์ PromptPay
+function createPaymentLink(amount) {
+  const promptPayNumber = '0943691074';
+  return `https://promptpay.io/${promptPayNumber}/${amount}`;
 }
 
 export default async function handler(req, res) {
@@ -48,12 +54,13 @@ export default async function handler(req, res) {
   try {
     let body = {};
 
-    if (req.headers['content-type'].includes('application/json')) {
-      // ✅ ถ้าเป็น JSON body (PromptPay)
+    // ✅ ตรวจสอบ content-type ก่อนเรียก includes
+    const contentType = req.headers['content-type'] || '';
+    if (contentType.includes('application/json')) {
       body = await parseJsonBody(req);
     }
 
-    // ✅ ตรวจ JWT
+    // ✅ ตรวจสอบ JWT
     const token = req.cookies?.token;
     if (!token) {
       return res.status(401).json({ error: 'Not authenticated. Please login first.' });
@@ -104,7 +111,8 @@ export default async function handler(req, res) {
       }
 
       if (!user.location || user.location.trim() === '') {
-        return res.status(400).json({ error: 'User address is required before placing an order.' });
+        console.log()
+        return res.status(400).json({ error: 'User address is required before placing an order.' + user.location + 'sdfs' });
       }
 
       const orders = await Promise.all(
@@ -123,6 +131,7 @@ export default async function handler(req, res) {
         )
       );
 
+      // ✅ ล้างตะกร้าหลังสั่งซื้อ
       await prisma.cartProduct.deleteMany({ where: { cartId: user.cart.id } });
 
       return res.status(201).json({ message: 'Order created successfully', orders });
@@ -131,10 +140,4 @@ export default async function handler(req, res) {
     console.error('❌ Error in /api/payment:', error.message);
     return res.status(500).json({ error: 'Internal Server Error', details: error.message });
   }
-}
-
-// ✅ ฟังก์ชันสร้างลิงก์ PromptPay
-function createPaymentLink(amount) {
-  const promptPayNumber = '0943691074';
-  return `https://promptpay.io/${promptPayNumber}/${amount}`;
 }

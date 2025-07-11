@@ -64,29 +64,38 @@ export default async function handler(req, res) {
       }
 
       const updatedData = {};
-      if (name) updatedData.name = name;
-      if (email) updatedData.email = email;
-      if (location) updatedData.location = location;
-      if (phoneNumber) updatedData.phoneNumber = phoneNumber;
-
-      if (password) {
+      if (name?.trim()) updatedData.name = name.trim();
+      if (location?.trim()) updatedData.location = location.trim();
+      if (phoneNumber?.trim()) updatedData.phoneNumber = phoneNumber.trim();
+      if (email?.trim()) updatedData.email = email.trim();
+      if (password?.trim()) {
         updatedData.password = await bcrypt.hash(password, 10);
+      }
+
+      if (Object.keys(updatedData).length === 0) {
+        return res.status(400).json({ error: 'No valid fields to update' });
       }
 
       const updatedUser = await prisma.users.update({
         where: { id: userId },
-        data: updatedData,
+        data: updatedData, // ✅ ใช้ updatedData ที่ filter แล้ว
         select: {
           id: true,
           email: true,
           name: true,
           location: true,
           phoneNumber: true,
-          updatedAt: true,
         },
       });
 
-      console.log(`✅ User updated: ${updatedUser.id}`);
+
+      console.log(`✅ User updated:`, {
+        name: updatedUser.name,
+        phone: updatedUser.phoneNumber,
+        location: updatedUser.location,
+        email: updatedUser.email,
+      });
+
       return res.status(200).json(updatedUser);
     } catch (error) {
       console.error('❌ Error updating user:', error);

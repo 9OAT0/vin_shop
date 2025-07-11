@@ -29,6 +29,7 @@ interface Order {
   status: string;
   createdAt: string;
   productId?: string;
+  paymentSlip?: string;
 }
 
 interface Report {
@@ -63,6 +64,7 @@ const Dashboard: React.FC = () => {
     try {
       const response = await axios.get<Order[]>("/api/getOrders", { withCredentials: true });
       setOrders(Array.isArray(response.data) ? response.data : []);
+      console.log(response)
     } catch (err) {
       console.error("❌ Error fetching orders:", err);
       setOrders([]);
@@ -89,10 +91,11 @@ const Dashboard: React.FC = () => {
   }, []);
 
   const openEditModal = (order: Order) => {
-    setEditOrder(order);
-    setNewStatus(order.status);
-    setNewTrackingId(order.trackingId || "");
-  };
+  console.log("📝 Editing Order:", order); // 👈 ดูค่า paymentSlip
+  setEditOrder(order);
+  setNewStatus(order.status);
+  setNewTrackingId(order.trackingId || "");
+};
 
   const closeEditModal = () => {
     setEditOrder(null);
@@ -101,53 +104,53 @@ const Dashboard: React.FC = () => {
   };
 
   const handleUpdateOrder = async () => {
-  if (!editOrder?.id) return;
+    if (!editOrder?.id) return;
 
-  const validStatuses = ["Pending", "Processing", "Delivered", "Canceled", "Shipped"];
-  const statusToSend = newStatus;
+    const validStatuses = ["Pending", "Processing", "Delivered", "Canceled", "Shipped"];
+    const statusToSend = newStatus;
 
-  if (!validStatuses.includes(statusToSend)) {
-    alert(`❌ Invalid status. Must be one of: ${validStatuses.join(", ")}`);
-    return;
-  }
-
-  setLoading(true);
-
-  try {
-    const response = await axios.put(
-      "/api/OrderAdmin",
-      {
-        orderId: editOrder.id,
-        status: statusToSend,
-        trackingId: newTrackingId.trim() || undefined,
-      },
-      { withCredentials: true }
-    );
-
-    console.log("✅ Order updated:", response.data);
-    alert("✅ คำสั่งซื้ออัปเดตสำเร็จ!");
-    closeEditModal();
-    fetchOrders();
-  } catch (err: unknown) {
-    if (isAxiosError(err)) {
-      console.error("❌ Axios error:", {
-        message: err.message ?? "No message",
-        status: err.response?.status ?? "No status",
-        data: err.response?.data ?? "No response data",
-      });
-      alert(`❌ Update failed: ${err.response?.data?.error || err.message}`);
-    } else {
-      console.error("❌ Unexpected error:", err);
-      alert(`❌ Unexpected error: ${String(err)}`);
+    if (!validStatuses.includes(statusToSend)) {
+      alert(`❌ Invalid status. Must be one of: ${validStatuses.join(", ")}`);
+      return;
     }
-  } finally {
-    setLoading(false);
-  }
-};
 
-function isAxiosError(error: unknown): error is { response?: any; message?: string } {
-  return typeof error === "object" && error !== null && "response" in error;
-}
+    setLoading(true);
+
+    try {
+      const response = await axios.put(
+        "/api/OrderAdmin",
+        {
+          orderId: editOrder.id,
+          status: statusToSend,
+          trackingId: newTrackingId.trim() || undefined,
+        },
+        { withCredentials: true }
+      );
+
+      console.log("✅ Order updated:", response.data);
+      alert("✅ คำสั่งซื้ออัปเดตสำเร็จ!");
+      closeEditModal();
+      fetchOrders();
+    } catch (err: unknown) {
+      if (isAxiosError(err)) {
+        console.error("❌ Axios error:", {
+          message: err.message ?? "No message",
+          status: err.response?.status ?? "No status",
+          data: err.response?.data ?? "No response data",
+        });
+        alert(`❌ Update failed: ${err.response?.data?.error || err.message}`);
+      } else {
+        console.error("❌ Unexpected error:", err);
+        alert(`❌ Unexpected error: ${String(err)}`);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  function isAxiosError(error: unknown): error is { response?: any; message?: string } {
+    return typeof error === "object" && error !== null && "response" in error;
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 p-6 text-black">
@@ -252,6 +255,26 @@ function isAxiosError(error: unknown): error is { response?: any; message?: stri
               onChange={(e) => setNewTrackingId(e.target.value)}
               className="w-full p-2 border border-gray-300 rounded mb-3"
             />
+            {/* ✅ Show Payment Slip */}
+            {editOrder?.paymentSlip && (
+              <div className="mt-3">
+                <label className="block mb-1 font-medium">Payment Slip:</label>
+                <img
+                  src={editOrder.paymentSlip}
+                  alt="Payment Slip"
+                  className="w-full rounded border"
+                />
+                <a
+                  href={editOrder.paymentSlip}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block text-blue-500 underline mt-2 text-center"
+                >
+                  🔗 เปิดสลิปในแท็บใหม่
+                </a>
+              </div>
+            )}
+
             <div className="flex justify-end">
               <button
                 onClick={closeEditModal}
