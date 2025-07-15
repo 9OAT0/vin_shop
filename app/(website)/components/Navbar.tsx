@@ -62,6 +62,7 @@ export default function Navbar() {
       <div className="flex gap-4">
         <a href="/shopall">SHOP ALL</a>
         <a href="/cart">CART</a>
+        <a href="/profile">PROFILE</a>
         {isAuthenticated ? (
           <>
             <button
